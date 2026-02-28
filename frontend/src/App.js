@@ -21,16 +21,27 @@ const App = () => {
     const host = window.location.hostname;
     const parts = host.split('.');
 
-    // logic to identify subdomain:
-    // 1. localhost:3000 -> parts = ["localhost"] (no subdomain)
-    // 2. student.vercel.app -> parts = ["student", "vercel", "app"] (subdomain is student)
-    // 3. student.civildeptigit.com -> parts = ["student", "civildeptigit", "com"] (subdomain is student)
-    // 4. www.mysite.com -> parts = ["www", "mysite", "com"] (ignore www)
+    // Known base instances that shouldn't trigger portfolio mode
+    const baseHosts = [
+      'localhost',
+      'civil-cms.vercel.app', // Your vercel app base
+      'civildeptigit.com'
+    ];
+
+    if (baseHosts.includes(host)) {
+      return null;
+    }
 
     if (parts.length >= 3 && parts[0] !== 'www') {
+      const isVercelApp = parts.slice(-2).join('.') === 'vercel.app';
+      if (isVercelApp && parts.length === 3) {
+        // This is a base vercel app link like my-app.vercel.app, not a student portfolio.
+        return null;
+      }
       return parts[0];
     }
-    // Handle special case for local testing: student.localhost:3000
+
+    // Handle special case for local testing: student.localhost
     if (parts.length === 2 && parts[1] === 'localhost') {
       return parts[0];
     }
