@@ -13,12 +13,12 @@ const SeeNotice = () => {
 
     useEffect(() => {
         if (currentRole === "Admin") {
-            dispatch(getAllNotices(currentUser._id, "Notice"));
+            dispatch(getAllNotices(currentUser?._id, "Notice"));
         }
         else {
-            dispatch(getAllNotices(currentUser.school._id, "Notice"));
+            dispatch(getAllNotices(currentUser?.school?._id, "Notice"));
         }
-    }, [dispatch, currentRole, currentUser]);
+    }, [dispatch, currentRole, currentUser?._id, currentUser?.school?._id]);
 
     const noticeColumns = [
         { id: 'title', label: 'Title', minWidth: 170 },

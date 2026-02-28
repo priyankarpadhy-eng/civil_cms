@@ -29,12 +29,10 @@ import {
 } from '@mui/material';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import {
-    deleteUser,
     getUserDetails,
     updateUser
 } from '../../../redux/userRelated/userHandle';
 import {
-    removeStuff,
     updateStudentFields
 } from '../../../redux/studentRelated/studentHandle';
 import {
@@ -75,8 +73,7 @@ const ViewStudent = () => {
     const navigate = useNavigate();
     const params = useParams();
     const dispatch = useDispatch();
-    const { userDetails, loading, response, error } = useSelector((state) => state.user);
-    const { subjectsList } = useSelector((state) => state.sclass);
+    const { userDetails, loading } = useSelector((state) => state.user);
 
     const studentID = params.id;
     const address = "Student";
@@ -102,7 +99,7 @@ const ViewStudent = () => {
         if (userDetails?.sclassName?._id) {
             dispatch(getSubjectList(userDetails.sclassName._id, "ClassSubjects"));
         }
-    }, [dispatch, userDetails]);
+    }, [dispatch, userDetails?.sclassName?._id]);
 
     useEffect(() => {
         if (userDetails) {
