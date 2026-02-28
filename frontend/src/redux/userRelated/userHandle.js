@@ -35,7 +35,11 @@ export const loginUser = (fields, role) => async (dispatch) => {
         // In a production app, you should use Supabase Auth (auth.signInWithPassword).
         const { data, error } = await supabase
             .from(table)
-            .select('*')
+            .select(`
+                *,
+                sclassName:sclass_id (*),
+                school:school_id (*)
+            `)
             .eq(role === 'Student' ? 'roll_num' : 'email', fields.rollNum || fields.email)
             .eq('password', fields.password)
             .single();
@@ -45,9 +49,15 @@ export const loginUser = (fields, role) => async (dispatch) => {
             return;
         }
 
-        // Map Postgres snake_case back to frontend camelCase if needed,
-        // but for now, we'll suggest passing data as is.
-        const compatData = data ? { ...data, _id: data.id } : data;
+        // Map Postgres snake_case back to frontend camelCase for Student compatibility
+        let compatData = { ...data, _id: data.id };
+        if (role === 'Student') {
+            compatData.rollNum = data.roll_num;
+            if (data.sclassName) {
+                compatData.sclassName = { ...data.sclassName, _id: data.sclassName.id };
+            }
+        }
+
         dispatch(authSuccess(compatData));
     } catch (error) {
         dispatch(authError(error.message));
