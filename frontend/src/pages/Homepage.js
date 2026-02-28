@@ -131,9 +131,9 @@ const LandingPage = () => {
           </LogoSection>
 
           <NavLinks>
-            <NavLink href="#leadership">Leadership</NavLink>
-            <NavLink href="#faculty">Faculty</NavLink>
-            <NavLink href="#students">Reps</NavLink>
+            <NavLink href="#welcome">HOD Message</NavLink>
+            <NavLink href="#faculty">Our Teachers</NavLink>
+            <NavLink href="#students">Student Team</NavLink>
             <Link to="/alumni" style={{ textDecoration: 'none' }}><NavLink as="span">Alumni Portal</NavLink></Link>
 
             <Divider orientation="vertical" flexItem sx={{ bgcolor: 'rgba(128,128,128,0.2)', mx: 1 }} />
@@ -158,8 +158,8 @@ const LandingPage = () => {
             transition={{ duration: 1, ease: "easeOut" }}
           >
             <HeroBadge>
-              <WorkspacePremiumRoundedIcon sx={{ fontSize: 14 }} />
-              <span>Institutional Portal</span>
+              <SchoolRoundedIcon sx={{ fontSize: 14 }} />
+              <span>Department Portal</span>
             </HeroBadge>
             <HeroTitle isDarkMode={isDarkMode}>
               Department of <br />
@@ -175,77 +175,89 @@ const LandingPage = () => {
 
         <ScrollNotice>
           <MouseIcon />
-          <Typography variant="caption">EXPLOER DEPT.</Typography>
+          <Typography variant="caption">SCROLL DOWN</Typography>
         </ScrollNotice>
       </HeroSection>
 
-      {/* Leadership & HOD Section */}
-      <Section id="leadership">
+      {/* A warm Welcome Section */}
+      <section id="welcome" style={{ padding: '120px 0', borderBottom: '1px solid var(--clr-border)' }}>
         <Container maxWidth="lg">
-          <Grid container spacing={10} alignItems="center">
+          <Grid container spacing={8} alignItems="center">
             <Grid item xs={12} md={5}>
-              <motion.div whileHover={{ scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }}>
-                <LeadershipPoster>
-                  <PosterImg src={hod.image} alt="HOD" />
-                  <PosterOverlay />
-                  <PosterDetails>
-                    <Typography variant="h5" fontWeight={900}>{hod.name}</Typography>
-                    <Typography variant="body2" fontWeight={700} sx={{ opacity: 0.8 }}>Head of Department · IGIT Sarang</Typography>
-                  </PosterDetails>
-                </LeadershipPoster>
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+              >
+                <HODProfileCard>
+                  <img src={hod.image} alt="HOD" style={{ width: '100%', borderRadius: '32px', filter: 'grayscale(30%)' }} />
+                  <HODBadge>
+                    <Typography variant="h6" fontWeight={900}>{hod.name}</Typography>
+                    <Typography variant="body2" fontWeight={700}>Head of Department</Typography>
+                  </HODBadge>
+                </HODProfileCard>
               </motion.div>
             </Grid>
             <Grid item xs={12} md={7}>
-              <Tag isDarkMode={isDarkMode}>Leadership Message</Tag>
-              <Typography variant="h2" fontWeight={950} sx={{ mb: 4, letterSpacing: '-0.04em' }}>
-                Department <br />
-                <SpanBrand>Leadership</SpanBrand>
-              </Typography>
-              <QuoteWrapper isDarkMode={isDarkMode}>
-                <Typography variant="h5" sx={{ fontStyle: 'italic', fontWeight: 500, lineHeight: 1.6 }}>
-                  "{hod.hodMessage}"
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+              >
+                <Typography variant="overline" sx={{ letterSpacing: 4, fontWeight: 900, color: 'var(--clr-primary)' }}>
+                  A Message from the HOD
                 </Typography>
-              </QuoteWrapper>
-              <Box mt={6} display="flex" alignItems="center" gap={4}>
-                <SignatureBox>
+                <Typography variant="h3" sx={{ fontWeight: 900, mt: 2, mb: 4, letterSpacing: '-0.02em' }}>
+                  Welcome to our <SpanBrand>Community</SpanBrand>
+                </Typography>
+                <div style={{ position: 'relative' }}>
+                  <Typography variant="h5" sx={{
+                    fontStyle: 'italic',
+                    lineHeight: 1.8,
+                    fontWeight: 500,
+                    opacity: 0.9,
+                    position: 'relative',
+                    zIndex: 1,
+                    pl: 4,
+                    borderLeft: '4px solid var(--clr-primary)'
+                  }}>
+                    "Hello everyone. As the Head of Department, I want to welcome you to our digital home. Here at IGIT Civil, we believe in hard work, simple values, and helping every student find their path. Whether you are a student, teacher, or an old friend from our alumni, this portal is here to keep us all connected. Let's build a great future together, one step at a time."
+                  </Typography>
+                </div>
+                <Box mt={6}>
                   <Typography variant="h6" fontWeight={900}>{hod.name}</Typography>
-                  <Typography variant="caption" fontWeight={700} color="var(--clr-primary)">PRINCIPAL COORDINATOR</Typography>
-                </SignatureBox>
-                <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />
-                <Box>
-                  <Typography variant="body2" fontWeight={800}>{hod.experience} of Service</Typography>
-                  <Typography variant="caption" color="textSecondary">To Engineering Education</Typography>
+                  <Typography variant="caption" sx={{ opacity: 0.6, fontWeight: 800 }}>PROFESSOR & HOD · IGIT SARANG</Typography>
                 </Box>
-              </Box>
+              </motion.div>
             </Grid>
           </Grid>
         </Container>
-      </Section>
+      </section>
 
-      {/* Professional Directory */}
+      {/* Professional Community */}
       <Section id="faculty" isDarkMode={isDarkMode} darkBg>
         <Container maxWidth="lg">
           <DirectoryHeader>
-            <Tag isDarkMode={isDarkMode} centered>Faculty</Tag>
-            <Typography variant="h2" fontWeight={950} className="title">Departmental Faculty</Typography>
+            <Tag isDarkMode={isDarkMode} centered>Our Team</Tag>
+            <Typography variant="h2" fontWeight={950} className="title">Faculty Members</Typography>
           </DirectoryHeader>
 
           <FacultyTier>
-            <TierLabel>Executive Professors</TierLabel>
+            <TierLabel>Professors</TierLabel>
             <Grid container spacing={4}>
               {professors.map((p, i) => <FacultyCard key={i} data={p} isDarkMode={isDarkMode} />)}
             </Grid>
           </FacultyTier>
 
           <FacultyTier>
-            <TierLabel>Associate Collective</TierLabel>
+            <TierLabel>Associate Professors</TierLabel>
             <Grid container spacing={4}>
               {assocProfs.map((p, i) => <FacultyCard key={i} data={p} isDarkMode={isDarkMode} />)}
             </Grid>
           </FacultyTier>
 
           <FacultyTier>
-            <TierLabel>Assistant Faculty</TierLabel>
+            <TierLabel>Assistant Professors</TierLabel>
             <Grid container spacing={4}>
               {asstProfs.map((p, i) => <FacultyCard key={i} data={p} isDarkMode={isDarkMode} />)}
             </Grid>
@@ -659,6 +671,26 @@ const PosterDetails = styled.div`
 `;
 
 const SignatureBox = styled.div``;
+
+const HODProfileCard = styled.div`
+  position: relative;
+  padding: 20px;
+  background: var(--clr-surface-2);
+  border-radius: 40px;
+  box-shadow: var(--shadow-lg);
+`;
+
+const HODBadge = styled.div`
+  position: absolute;
+  bottom: -20px;
+  right: -20px;
+  background: white;
+  padding: 20px 30px;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  color: black;
+  border: 1px solid var(--clr-border);
+`;
 
 const DirectoryHeader = styled.div`
     text-align: center;
