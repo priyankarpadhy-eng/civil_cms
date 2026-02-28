@@ -55,9 +55,36 @@ export const registerUser = (fields, role) => async (dispatch) => {
     try {
         const table = mapAddressToTable(role);
 
+        let mappedFields = { ...fields };
+        if (role === 'Admin') {
+            mappedFields = {
+                school_name: fields.schoolName,
+                email: fields.email,
+                password: fields.password,
+                role: 'Admin'
+            };
+        } else if (role === 'Student') {
+            mappedFields = {
+                name: fields.name,
+                roll_num: fields.rollNum,
+                password: fields.password,
+                sclass_id: fields.sclassName,
+                school_id: fields.adminID,
+                role: 'Student'
+            };
+        } else if (role === 'Teacher') {
+            mappedFields = {
+                name: fields.name,
+                email: fields.email,
+                password: fields.password,
+                role: 'Teacher',
+                school_id: fields.adminID
+            };
+        }
+
         const { data, error } = await supabase
             .from(table)
-            .insert([fields])
+            .insert([mappedFields])
             .select()
             .single();
 
