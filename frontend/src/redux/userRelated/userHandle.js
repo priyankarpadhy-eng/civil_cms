@@ -16,7 +16,11 @@ const mapAddressToTable = (address) => {
         'Student': 'students',
         'Admin': 'admins',
         'Teacher': 'teachers',
-        'Alumni': 'alumni'
+        'Alumni': 'alumni',
+        'Sclass': 'classes',
+        'Subject': 'subjects',
+        'Notice': 'notices',
+        'Complain': 'complains'
     };
     return map[address] || address.toLowerCase() + 's';
 };
@@ -179,3 +183,54 @@ export const getStudentBySlug = (slug) => async (dispatch) => {
         dispatch(getError(error.message));
     }
 }
+
+export const addStuff = (fields, address) => async (dispatch) => {
+    dispatch(authRequest());
+
+    try {
+        const table = mapAddressToTable(address);
+        // Map payload fields to snake_case equivalent if needed, but since it's dynamic
+        // we'll try to insert as is, however, things like school_id need mapping if not provided correctly
+        let insertData = { ...fields };
+        if (fields.sclassName) insertData.sclass_id = fields.sclassName;
+        if (fields.adminID) insertData.school_id = fields.adminID;
+        // Specifically for notices/complains if they send 'date' or anything we can just spread.
+
+        const { data, error } = await supabase
+            .from(table)
+            .insert([insertData])
+            .select()
+            .single();
+
+        if (error) {
+            dispatch(authFailed(error.message));
+        } else {
+            dispatch(stuffAdded(data));
+        }
+    } catch (error) {
+        dispatch(authError(error.message));
+    }
+};
+
+export const bulkAddStudents = (fields) => async (dispatch) => {
+    dispatch(authRequest());
+    try {
+        const mappedFields = fields.map(f => ({
+            ...f,
+            sclass_id: f.sclassName,
+            school_id: f.adminID
+        }));
+
+        const { data, error } = await supabase
+            .from('students')
+            .insert(mappedFields);
+
+        if (error) {
+            dispatch(authFailed(error.message));
+        } else {
+            dispatch(stuffAdded());
+        }
+    } catch (error) {
+        dispatch(authError(error.message));
+    }
+};
