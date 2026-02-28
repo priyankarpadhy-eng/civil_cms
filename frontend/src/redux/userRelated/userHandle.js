@@ -47,7 +47,8 @@ export const loginUser = (fields, role) => async (dispatch) => {
 
         // Map Postgres snake_case back to frontend camelCase if needed,
         // but for now, we'll suggest passing data as is.
-        dispatch(authSuccess(data));
+        const compatData = data ? { ...data, _id: data.id } : data;
+        dispatch(authSuccess(compatData));
     } catch (error) {
         dispatch(authError(error.message));
     }
@@ -98,7 +99,8 @@ export const registerUser = (fields, role) => async (dispatch) => {
         }
 
         if (role === 'Admin') {
-            dispatch(authSuccess(data));
+            const compatData = data ? { ...data, _id: data.id } : data;
+            dispatch(authSuccess(compatData));
         } else {
             dispatch(stuffAdded());
         }
