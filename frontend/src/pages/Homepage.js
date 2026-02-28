@@ -131,7 +131,6 @@ const LandingPage = () => {
           </LogoSection>
 
           <NavLinks>
-            <NavLink href="#welcome">HOD Message</NavLink>
             <NavLink href="#faculty">Our Teachers</NavLink>
             <NavLink href="#students">Student Team</NavLink>
             <Link to="/alumni" style={{ textDecoration: 'none' }}><NavLink as="span">Alumni Portal</NavLink></Link>
