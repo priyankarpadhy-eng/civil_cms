@@ -143,19 +143,46 @@ export const updateUser = (fields, id, address) => async (dispatch) => {
 
     try {
         const table = mapAddressToTable(address);
+        let updateData = { ...fields };
+
+        // Mapping common and face-related fields
+        if (fields.faceData) {
+            updateData.face_data = fields.faceData;
+            delete updateData.faceData;
+        }
+        if (fields.faceCaptured) {
+            updateData.face_captured = fields.faceCaptured;
+            delete updateData.faceCaptured;
+        }
+        if (fields.faceDescriptor) {
+            updateData.face_descriptor = fields.faceDescriptor;
+            delete updateData.faceDescriptor;
+        }
+        if (fields.adminID) {
+            updateData.school_id = fields.adminID;
+            delete updateData.adminID;
+        }
+        if (fields.rollNum) {
+            updateData.roll_num = fields.rollNum;
+            delete updateData.rollNum;
+        }
+
         const { data, error } = await supabase
             .from(table)
-            .update(fields)
+            .update(updateData)
             .eq('id', id)
             .select()
             .single();
 
         if (error) throw error;
 
-        if (address === 'Admin' || data.role) {
-            dispatch(authSuccess(data));
+        // Ensure compatibility mapping for the rest of the app
+        const compatData = data ? { ...data, _id: data.id } : data;
+
+        if (address === 'Admin' || compatData.role) {
+            dispatch(authSuccess(compatData));
         } else {
-            dispatch(doneSuccess(data));
+            dispatch(doneSuccess(compatData));
         }
     } catch (error) {
         dispatch(getError(error.message));
