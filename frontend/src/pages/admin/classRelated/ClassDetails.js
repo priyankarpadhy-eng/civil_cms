@@ -78,9 +78,10 @@ const ClassDetails = () => {
     ];
 
     const subjectRows = subjectsList?.map((subject) => ({
-        name: subject.subName,
-        code: subject.subCode,
-        id: subject._id,
+        name: subject.sub_name,
+        code: subject.sub_code,
+        id: subject.id,
+        _id: subject.id,
     })) || [];
 
     const studentColumns = [
@@ -90,8 +91,9 @@ const ClassDetails = () => {
 
     const studentRows = sclassStudents.map((student) => ({
         name: student.name,
-        rollNum: student.rollNum,
-        id: student._id,
+        rollNum: student.roll_num,
+        id: student.id,
+        _id: student.id,
     }));
 
     const subjectActions = [
@@ -179,15 +181,15 @@ const ClassDetails = () => {
                                                     <Stack spacing={2} sx={{ mt: 2 }}>
                                                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                                             <Typography sx={{ color: 'var(--clr-text-muted)', fontWeight: 600 }}>Academic Name</Typography>
-                                                            <Typography fontWeight={800}>{sclassDetails?.sclassName}</Typography>
+                                                            <Typography fontWeight={800}>{sclassDetails?.sclass_name}</Typography>
                                                         </Box>
                                                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                                             <Typography sx={{ color: 'var(--clr-text-muted)', fontWeight: 600 }}>Passout Cohort</Typography>
-                                                            <Chip size="small" icon={<CalendarTodayRounded sx={{ fontSize: '0.8rem !important' }} />} label={sclassDetails?.passoutYear} />
+                                                            <Chip size="small" icon={<CalendarTodayRounded sx={{ fontSize: '0.8rem !important' }} />} label={sclassDetails?.passout_year} />
                                                         </Box>
                                                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                                             <Typography sx={{ color: 'var(--clr-text-muted)', fontWeight: 600 }}>Batch Reference</Typography>
-                                                            <Typography fontWeight={800}>{sclassDetails?.batchNumber}</Typography>
+                                                            <Typography fontWeight={800}>{sclassDetails?.batch_number}</Typography>
                                                         </Box>
                                                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                                                             <Typography sx={{ color: 'var(--clr-text-muted)', fontWeight: 600 }}>Sections Active</Typography>
@@ -222,7 +224,7 @@ const ClassDetails = () => {
                                                         <GlassPaper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
                                                             <SchoolRounded color="primary" />
                                                             <Typography variant="body2" fontWeight={600}>
-                                                                Academic session is currently active for this batch under {sclassDetails?.school?.schoolName || "IGIT Sarang"}.
+                                                                Academic session is currently active for this batch under {sclassDetails?.school?.school_name || "IGIT Sarang"}.
                                                             </Typography>
                                                         </GlassPaper>
                                                     </Grid>
@@ -264,11 +266,11 @@ const ClassDetails = () => {
                                                         {reps.length > 0 ? (
                                                             <Stack spacing={2}>
                                                                 {reps.map(rep => (
-                                                                    <RepItem key={rep._id} onClick={() => navigate("/Admin/students/student/" + rep._id)}>
+                                                                    <RepItem key={rep.id} onClick={() => navigate("/Admin/students/student/" + rep.id)}>
                                                                         <Avatar src={rep.profilePic} />
                                                                         <Box sx={{ flex: 1 }}>
                                                                             <Typography fontWeight={700}>{rep.name}</Typography>
-                                                                            <Typography variant="caption" color="text.secondary">Roll: {rep.rollNum}</Typography>
+                                                                            <Typography variant="caption" color="text.secondary">Roll: {rep.roll_num}</Typography>
                                                                         </Box>
                                                                         <IconButton size="small"><ArrowBackIosNewRounded sx={{ fontSize: '0.8rem', transform: 'rotate(180deg)' }} /></IconButton>
                                                                     </RepItem>

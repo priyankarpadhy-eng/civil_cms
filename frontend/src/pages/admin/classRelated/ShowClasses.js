@@ -45,10 +45,16 @@ const ShowClasses = () => {
     setShowPopup(true);
   };
 
-  const filteredClasses = sclassesList?.filter(item =>
+  const filteredClasses = (sclassesList || []).map(item => ({
+    ...item,
+    _id: item.id, // Ensure frontend _id maps to Supabase id
+    sclassName: item.sclass_name,
+    batchNumber: item.batch_number,
+    passoutYear: item.passout_year
+  })).filter(item =>
     item.sclassName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.batchNumber?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
 
   const containerVariants = {
     hidden: { opacity: 0 },
