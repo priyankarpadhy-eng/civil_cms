@@ -218,41 +218,49 @@ export const addStuff = (fields, address) => async (dispatch) => {
         const table = mapAddressToTable(address);
         let insertData = { ...fields };
 
-        // Standard Mappings
+        // 1. Mandatory Core Mappings (Always delete specific camelCase keys)
         if (fields.adminID) {
             insertData.school_id = fields.adminID;
-            delete insertData.adminID;
+        }
+        delete insertData.adminID; // Always delete to avoid column errors even if falsy
+
+        // 2. Conditional Class/Sclass Mappings
+        if (address === 'Sclass') {
+            if (fields.sclassName) insertData.sclass_name = fields.sclassName;
+            if (fields.passoutYear) insertData.passout_year = fields.passoutYear;
+            if (fields.batchNumber) insertData.batch_number = fields.batchNumber;
+
+            delete insertData.sclassName;
+            delete insertData.passoutYear;
+            delete insertData.batchNumber;
         }
 
-        // Specific Table Mappings
-        if (address === 'Sclass') {
-            if (fields.sclassName) {
-                insertData.sclass_name = fields.sclassName;
-                delete insertData.sclassName;
-            }
-            if (fields.passoutYear) {
-                insertData.passout_year = fields.passoutYear;
-                delete insertData.passoutYear;
-            }
-            if (fields.batchNumber) {
-                insertData.batch_number = fields.batchNumber;
-                delete insertData.batchNumber;
-            }
-        } else if (address === 'Subject') {
-            if (fields.sclassName) {
-                insertData.sclass_id = fields.sclassName;
-                delete insertData.sclassName;
-            }
-        } else if (address === 'Student') {
-            if (fields.sclassName) {
-                insertData.sclass_id = fields.sclassName;
-                delete insertData.sclassName;
-            }
-            if (fields.rollNum) {
-                insertData.roll_num = fields.rollNum;
-                delete insertData.rollNum;
-            }
+        // 3. Subject Mappings
+        else if (address === 'Subject') {
+            if (fields.sclassName) insertData.sclass_id = fields.sclassName;
+            delete insertData.sclassName;
         }
+
+        // 4. Student Mappings
+        else if (address === 'Student') {
+            if (fields.sclassName) insertData.sclass_id = fields.sclassName;
+            if (fields.rollNum) insertData.roll_num = fields.rollNum;
+
+            delete insertData.sclassName;
+            delete insertData.rollNum;
+        }
+
+        // 5. Notice/Complain Mappings (Standardize school_id)
+        else if (address === 'Notice' || address === 'Complain') {
+            // Already handled by general adminID -> school_id mapper above
+        }
+
+        // Final sanity check: Ensure no undefined keys are sent that PostgREST might map to columns
+        Object.keys(insertData).forEach(key => {
+            if (insertData[key] === undefined) {
+                delete insertData[key];
+            }
+        });
 
         const { data, error } = await supabase
             .from(table)
