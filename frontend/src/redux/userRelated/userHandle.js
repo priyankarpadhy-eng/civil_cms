@@ -189,12 +189,43 @@ export const addStuff = (fields, address) => async (dispatch) => {
 
     try {
         const table = mapAddressToTable(address);
-        // Map payload fields to snake_case equivalent if needed, but since it's dynamic
-        // we'll try to insert as is, however, things like school_id need mapping if not provided correctly
         let insertData = { ...fields };
-        if (fields.sclassName) insertData.sclass_id = fields.sclassName;
-        if (fields.adminID) insertData.school_id = fields.adminID;
-        // Specifically for notices/complains if they send 'date' or anything we can just spread.
+
+        // Standard Mappings
+        if (fields.adminID) {
+            insertData.school_id = fields.adminID;
+            delete insertData.adminID;
+        }
+
+        // Specific Table Mappings
+        if (address === 'Sclass') {
+            if (fields.sclassName) {
+                insertData.sclass_name = fields.sclassName;
+                delete insertData.sclassName;
+            }
+            if (fields.passoutYear) {
+                insertData.passout_year = fields.passoutYear;
+                delete insertData.passoutYear;
+            }
+            if (fields.batchNumber) {
+                insertData.batch_number = fields.batchNumber;
+                delete insertData.batchNumber;
+            }
+        } else if (address === 'Subject') {
+            if (fields.sclassName) {
+                insertData.sclass_id = fields.sclassName;
+                delete insertData.sclassName;
+            }
+        } else if (address === 'Student') {
+            if (fields.sclassName) {
+                insertData.sclass_id = fields.sclassName;
+                delete insertData.sclassName;
+            }
+            if (fields.rollNum) {
+                insertData.roll_num = fields.rollNum;
+                delete insertData.rollNum;
+            }
+        }
 
         const { data, error } = await supabase
             .from(table)
@@ -205,20 +236,28 @@ export const addStuff = (fields, address) => async (dispatch) => {
         if (error) {
             dispatch(authFailed(error.message));
         } else {
-            dispatch(stuffAdded(data));
+            const compatData = data ? { ...data, _id: data.id } : data;
+            dispatch(stuffAdded(compatData));
         }
     } catch (error) {
         dispatch(authError(error.message));
     }
 };
 
-export const bulkAddStudents = (fields) => async (dispatch) => {
+export const bulkAddStudents = (payload) => async (dispatch) => {
     dispatch(authRequest());
     try {
-        const mappedFields = fields.map(f => ({
-            ...f,
-            sclass_id: f.sclassName,
-            school_id: f.adminID
+        const { students, adminID, sclassName } = payload;
+
+        const mappedFields = students.map(f => ({
+            name: f.name,
+            roll_num: f.rollNum,
+            registration_num: f.registrationNum,
+            current_semester: f.currentSemester,
+            password: f.password,
+            sclass_id: sclassName,
+            school_id: adminID,
+            role: 'Student'
         }));
 
         const { data, error } = await supabase
