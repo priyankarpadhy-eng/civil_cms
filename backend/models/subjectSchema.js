@@ -18,6 +18,10 @@ const subjectSchema = new mongoose.Schema({
         ref: 'sclass',
         required: true,
     },
+    section: {
+        type: String,
+        default: 'A'
+    },
     school: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'admin'

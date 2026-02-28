@@ -2,13 +2,14 @@ const router = require('express').Router();
 
 // const { adminRegister, adminLogIn, deleteAdmin, getAdminDetail, updateAdmin } = require('../controllers/admin-controller.js');
 
-const { adminRegister, adminLogIn, getAdminDetail} = require('../controllers/admin-controller.js');
+const { adminRegister, adminLogIn, getAdminDetail } = require('../controllers/admin-controller.js');
 
 const { sclassCreate, sclassList, deleteSclass, deleteSclasses, getSclassDetail, getSclassStudents } = require('../controllers/class-controller.js');
 const { complainCreate, complainList } = require('../controllers/complain-controller.js');
 const { noticeCreate, noticeList, deleteNotices, deleteNotice, updateNotice } = require('../controllers/notice-controller.js');
 const {
     studentRegister,
+    studentsRegister,
     studentLogIn,
     getStudents,
     getStudentDetail,
@@ -21,9 +22,12 @@ const {
     clearAllStudentsAttendanceBySubject,
     clearAllStudentsAttendance,
     removeStudentAttendanceBySubject,
-    removeStudentAttendance } = require('../controllers/student_controller.js');
-const { subjectCreate, classSubjects, deleteSubjectsByClass, getSubjectDetail, deleteSubject, freeSubjectList, allSubjects, deleteSubjects } = require('../controllers/subject-controller.js');
-const { teacherRegister, teacherLogIn, getTeachers, getTeacherDetail, deleteTeachers, deleteTeachersByClass, deleteTeacher, updateTeacherSubject, teacherAttendance } = require('../controllers/teacher-controller.js');
+    removeStudentAttendance,
+    getStudentBySlug } = require('../controllers/student_controller.js');
+const { subjectCreate, classSubjects, deleteSubjectsByClass, getSubjectDetail, deleteSubject, freeSubjectList, allSubjects, deleteSubjects, getTeacherSubjects } = require('../controllers/subject-controller.js');
+const { teacherRegister, teacherLogIn, getTeachers, getTeacherDetail, deleteTeachers, deleteTeachersByClass, deleteTeacher, updateTeacherSubject, teacherAttendance, updateTeacher } = require('../controllers/teacher-controller.js');
+const { alumniRegister, alumniLogIn, getAlumniList, approveAlumni, rejectAlumni, updateAlumni } = require('../controllers/alumni-controller.js');
+const { getPublicFaculty, getPublicReps, getAlumni } = require('../controllers/public-controller.js');
 
 // Admin
 router.post('/AdminReg', adminRegister);
@@ -37,6 +41,7 @@ router.get("/Admin/:id", getAdminDetail)
 // Student
 
 router.post('/StudentReg', studentRegister);
+router.post('/StudentsReg', studentsRegister);
 router.post('/StudentLogin', studentLogIn)
 
 router.get("/Students/:id", getStudents)
@@ -72,6 +77,7 @@ router.delete("/Teacher/:id", deleteTeacher)
 
 router.put("/TeacherSubject", updateTeacherSubject)
 
+router.put("/Teacher/:id", updateTeacher)
 router.post('/TeacherAttendance/:id', teacherAttendance)
 
 // Notice
@@ -108,6 +114,7 @@ router.delete("/Sclass/:id", deleteSclass)
 router.post('/SubjectCreate', subjectCreate);
 
 router.get('/AllSubjects/:id', allSubjects);
+router.get('/TeacherSubjects/:id', getTeacherSubjects);
 router.get('/ClassSubjects/:id', classSubjects);
 router.get('/FreeSubjectList/:id', freeSubjectList);
 router.get("/Subject/:id", getSubjectDetail)
@@ -115,5 +122,21 @@ router.get("/Subject/:id", getSubjectDetail)
 router.delete("/Subject/:id", deleteSubject)
 router.delete("/Subjects/:id", deleteSubjects)
 router.delete("/SubjectsClass/:id", deleteSubjectsByClass)
+
+// Alumni
+router.post('/AlumniReg', alumniRegister);
+router.post('/AlumniLogin', alumniLogIn);
+
+router.get("/AlumniList/:id", getAlumniList)
+router.put("/AlumniApprove/:id", approveAlumni)
+router.delete("/AlumniReject/:id", rejectAlumni)
+router.put("/AlumniUpdate/:id", updateAlumni)
+
+// Public Routes
+router.get('/PublicFaculty', getPublicFaculty);
+router.get('/PublicReps', getPublicReps);
+router.get('/PublicAlumni', getAlumni);
+
+router.get("/StudentPortfolio/:slug", getStudentBySlug);
 
 module.exports = router;

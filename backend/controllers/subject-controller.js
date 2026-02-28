@@ -8,6 +8,7 @@ const subjectCreate = async (req, res) => {
             subName: subject.subName,
             subCode: subject.subCode,
             sessions: subject.sessions,
+            section: subject.section || 'A'
         }));
 
         const existingSubjectBySubCode = await Subject.findOne({
@@ -161,4 +162,18 @@ const deleteSubjectsByClass = async (req, res) => {
 };
 
 
-module.exports = { subjectCreate, freeSubjectList, classSubjects, getSubjectDetail, deleteSubjectsByClass, deleteSubjects, deleteSubject, allSubjects };
+const getTeacherSubjects = async (req, res) => {
+    try {
+        let subjects = await Subject.find({ teacher: req.params.id })
+            .populate("sclassName", "sclassName batchNumber passoutYear sections")
+        if (subjects.length > 0) {
+            res.send(subjects)
+        } else {
+            res.send({ message: "No subjects found" });
+        }
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+module.exports = { subjectCreate, freeSubjectList, classSubjects, getSubjectDetail, deleteSubjectsByClass, deleteSubjects, deleteSubject, allSubjects, getTeacherSubjects };

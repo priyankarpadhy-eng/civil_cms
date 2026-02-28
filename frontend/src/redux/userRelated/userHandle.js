@@ -26,7 +26,7 @@ export const loginUser = (fields, role) => async (dispatch) => {
             dispatch(authFailed(result.data.message));
         }
     } catch (error) {
-        dispatch(authError(error));
+        dispatch(authError(error.message));
     }
 };
 
@@ -40,14 +40,14 @@ export const registerUser = (fields, role) => async (dispatch) => {
         if (result.data.schoolName) {
             dispatch(authSuccess(result.data));
         }
-        else if (result.data.school) {
+        else if (result.data.school || result.data.role === "Alumni") {
             dispatch(stuffAdded());
         }
         else {
             dispatch(authFailed(result.data.message));
         }
     } catch (error) {
-        dispatch(authError(error));
+        dispatch(authError(error.message));
     }
 };
 
@@ -64,7 +64,7 @@ export const getUserDetails = (id, address) => async (dispatch) => {
             dispatch(doneSuccess(result.data));
         }
     } catch (error) {
-        dispatch(getError(error));
+        dispatch(getError(error.message));
     }
 }
 
@@ -96,14 +96,14 @@ export const updateUser = (fields, id, address) => async (dispatch) => {
         const result = await axios.put(`${process.env.REACT_APP_BASE_URL}/${address}/${id}`, fields, {
             headers: { 'Content-Type': 'application/json' },
         });
-        if (result.data.schoolName) {
+        if (result.data.schoolName || result.data.role) {
             dispatch(authSuccess(result.data));
         }
         else {
             dispatch(doneSuccess(result.data));
         }
     } catch (error) {
-        dispatch(getError(error));
+        dispatch(getError(error.message));
     }
 }
 
@@ -121,6 +121,35 @@ export const addStuff = (fields, address) => async (dispatch) => {
             dispatch(stuffAdded(result.data));
         }
     } catch (error) {
-        dispatch(authError(error));
+        dispatch(authError(error.message));
     }
 };
+
+export const bulkAddStudents = (fields) => async (dispatch) => {
+    dispatch(authRequest());
+    try {
+        const result = await axios.post(`${process.env.REACT_APP_BASE_URL}/StudentsReg`, fields, {
+            headers: { 'Content-Type': 'application/json' },
+        });
+        if (result.data.message) {
+            dispatch(authFailed(result.data.message));
+        } else {
+            dispatch(stuffAdded());
+        }
+    } catch (error) {
+        dispatch(authError(error.message));
+    }
+};
+
+export const getStudentBySlug = (slug) => async (dispatch) => {
+    dispatch(getRequest());
+
+    try {
+        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/StudentPortfolio/${slug}`);
+        if (result.data) {
+            dispatch(doneSuccess(result.data));
+        }
+    } catch (error) {
+        dispatch(getError(error.message));
+    }
+}

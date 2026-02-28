@@ -7,6 +7,8 @@ import {
     Typography,
     Divider,
     IconButton,
+    useMediaQuery,
+    useTheme,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -16,6 +18,13 @@ import Logout from '../Logout';
 import SideBar from './SideBar';
 import AdminProfile from './AdminProfile';
 import AdminHomePage from './AdminHomePage';
+
+// New Advanced Features
+import AdminAccreditation from './AdminAccreditation';
+import AdminStrategy from './AdminStrategy';
+import AdminFacultyPortfolio from './AdminFacultyPortfolio';
+import AdminBudget from './AdminBudget';
+import AdminProcurement from './AdminProcurement';
 
 import AddStudent from './studentRelated/AddStudent';
 import SeeComplains from './studentRelated/SeeComplains';
@@ -40,133 +49,174 @@ import TeacherDetails from './teacherRelated/TeacherDetails';
 import AddClass from './classRelated/AddClass';
 import ClassDetails from './classRelated/ClassDetails';
 import ShowClasses from './classRelated/ShowClasses';
+import PersonnelManagement from './PersonnelManagement';
+import AdminAlumniManagement from './AdminAlumniManagement';
 import AccountMenu from '../../components/AccountMenu';
 
 const AdminDashboard = () => {
-    const [open, setOpen] = useState(false);
-    const toggleDrawer = () => {
-        setOpen(!open);
-    };
+    const [open, setOpen] = useState(true);
+    const toggleDrawer = () => setOpen(!open);
 
     return (
-        <>
-            <Box sx={{ display: 'flex' }}>
-                <CssBaseline />
-                <AppBar open={open} position='absolute'>
-                    <Toolbar sx={{ pr: '24px' }}>
-                        <IconButton
-                            edge="start"
-                            color="inherit"
-                            aria-label="open drawer"
-                            onClick={toggleDrawer}
-                            sx={{
-                                marginRight: '36px',
-                                ...(open && { display: 'none' }),
-                            }}
-                        >
-                            <MenuIcon />
-                        </IconButton>
-                        <Typography
-                            component="h1"
-                            variant="h6"
-                            color="inherit"
-                            noWrap
-                            sx={{ flexGrow: 1 }}
-                        >
-                            Admin Dashboard
-                        </Typography>
-                        <AccountMenu />
-                    </Toolbar>
-                </AppBar>
-                <Drawer variant="permanent" open={open} sx={open ? styles.drawerStyled : styles.hideDrawer}>
-                    <Toolbar sx={styles.toolBarStyled}>
-                        <IconButton onClick={toggleDrawer}>
-                            <ChevronLeftIcon />
-                        </IconButton>
-                    </Toolbar>
-                    <Divider />
-                    <List component="nav">
-                        <SideBar />
-                    </List>
-                </Drawer>
-                <Box component="main" sx={styles.boxStyled}>
-                    <Toolbar />
+        <Box sx={{ display: 'flex', background: 'var(--clr-bg)', minHeight: '100vh' }}>
+            <CssBaseline />
+
+            {/* Top AppBar */}
+            <AppBar open={open} position='fixed' sx={{
+                background: 'rgba(18,18,42,0.85)',
+                backdropFilter: 'blur(20px)',
+                borderBottom: '1px solid rgba(255,255,255,0.07)',
+                boxShadow: 'none',
+            }}>
+                <Toolbar sx={{ pr: '24px', gap: 1 }}>
+                    <IconButton
+                        edge="start"
+                        color="inherit"
+                        aria-label="open drawer"
+                        onClick={toggleDrawer}
+                        sx={{
+                            marginRight: '24px',
+                            ...(open && { display: 'none' }),
+                            color: 'var(--clr-text-secondary)',
+                            '&:hover': { color: 'var(--clr-primary-light)', background: 'rgba(108,99,255,0.1)' },
+                            borderRadius: '10px',
+                        }}
+                    >
+                        <MenuIcon />
+                    </IconButton>
+
+                    {/* Logo / Brand */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
+                        <Box sx={{
+                            width: 32, height: 32,
+                            background: 'var(--grad-primary)',
+                            borderRadius: '8px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '1rem',
+                        }}>🏛️</Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                            <Typography
+                                component="h1"
+                                variant="h6"
+                                noWrap
+                                sx={{
+                                    fontFamily: 'var(--font-display)',
+                                    fontWeight: 800,
+                                    fontSize: '0.88rem',
+                                    color: 'var(--clr-text-primary)',
+                                    letterSpacing: '-0.01em',
+                                    lineHeight: 1.2,
+                                }}
+                            >
+                                Dept. of Civil Engineering
+                            </Typography>
+                            <Typography sx={{
+                                fontSize: '0.68rem',
+                                color: 'var(--clr-text-muted)',
+                                fontWeight: 500,
+                                letterSpacing: '0.01em',
+                            }}>
+                                IGIT Sarang
+                            </Typography>
+                        </Box>
+                    </Box>
+                    <AccountMenu />
+                </Toolbar>
+            </AppBar>
+
+            {/* Sidebar Drawer */}
+            <Drawer
+                variant="permanent"
+                open={open}
+                sx={{
+                    '& .MuiDrawer-paper': {
+                        background: 'var(--clr-surface-1)',
+                        borderRight: '1px solid rgba(255,255,255,0.07)',
+                        '&::-webkit-scrollbar': { width: '4px' },
+                        '&::-webkit-scrollbar-thumb': { background: 'var(--clr-surface-3)', borderRadius: '4px' },
+                    }
+                }}
+            >
+                {/* Drawer header */}
+                <Toolbar sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: open ? 'flex-end' : 'center',
+                    px: 1,
+                    minHeight: '64px !important',
+                }}>
+                    <IconButton onClick={toggleDrawer} sx={{
+                        color: 'var(--clr-text-muted)',
+                        borderRadius: '10px',
+                        '&:hover': { background: 'rgba(108,99,255,0.1)', color: 'var(--clr-primary-light)' },
+                    }}>
+                        <ChevronLeftIcon />
+                    </IconButton>
+                </Toolbar>
+                <Divider sx={{ borderColor: 'rgba(255,255,255,0.07)' }} />
+                <List component="nav" sx={{ pt: 1 }}>
+                    <SideBar open={open} />
+                </List>
+            </Drawer>
+
+            {/* Main Content */}
+            <Box
+                component="main"
+                sx={{
+                    flexGrow: 1,
+                    height: '100vh',
+                    overflow: 'auto',
+                    background: 'var(--clr-bg)',
+                }}
+            >
+                <Toolbar />
+                <Box sx={{ p: { xs: 2, sm: 3 } }}>
                     <Routes>
                         <Route path="/" element={<AdminHomePage />} />
                         <Route path='*' element={<Navigate to="/" />} />
                         <Route path="/Admin/dashboard" element={<AdminHomePage />} />
                         <Route path="/Admin/profile" element={<AdminProfile />} />
-                        <Route path="/Admin/complains" element={<SeeComplains />} />
 
-                        {/* Notice */}
+                        {/* Advanced Features Routes */}
+                        <Route path="/Admin/accreditation" element={<AdminAccreditation />} />
+                        <Route path="/Admin/strategy" element={<AdminStrategy />} />
+                        <Route path="/Admin/faculty-portfolio" element={<AdminFacultyPortfolio />} />
+                        <Route path="/Admin/budget" element={<AdminBudget />} />
+                        <Route path="/Admin/procurement" element={<AdminProcurement />} />
+
+                        <Route path="/Admin/complains" element={<SeeComplains />} />
                         <Route path="/Admin/addnotice" element={<AddNotice />} />
                         <Route path="/Admin/notices" element={<ShowNotices />} />
-
-                        {/* Subject */}
                         <Route path="/Admin/subjects" element={<ShowSubjects />} />
                         <Route path="/Admin/subjects/subject/:classID/:subjectID" element={<ViewSubject />} />
                         <Route path="/Admin/subjects/chooseclass" element={<ChooseClass situation="Subject" />} />
-
                         <Route path="/Admin/addsubject/:id" element={<SubjectForm />} />
                         <Route path="/Admin/class/subject/:classID/:subjectID" element={<ViewSubject />} />
-
                         <Route path="/Admin/subject/student/attendance/:studentID/:subjectID" element={<StudentAttendance situation="Subject" />} />
                         <Route path="/Admin/subject/student/marks/:studentID/:subjectID" element={<StudentExamMarks situation="Subject" />} />
-
-                        {/* Class */}
                         <Route path="/Admin/addclass" element={<AddClass />} />
                         <Route path="/Admin/classes" element={<ShowClasses />} />
                         <Route path="/Admin/classes/class/:id" element={<ClassDetails />} />
                         <Route path="/Admin/class/addstudents/:id" element={<AddStudent situation="Class" />} />
-
-                        {/* Student */}
                         <Route path="/Admin/addstudents" element={<AddStudent situation="Student" />} />
                         <Route path="/Admin/students" element={<ShowStudents />} />
                         <Route path="/Admin/students/student/:id" element={<ViewStudent />} />
                         <Route path="/Admin/students/student/attendance/:id" element={<StudentAttendance situation="Student" />} />
                         <Route path="/Admin/students/student/marks/:id" element={<StudentExamMarks situation="Student" />} />
-
-                        {/* Teacher */}
                         <Route path="/Admin/teachers" element={<ShowTeachers />} />
                         <Route path="/Admin/teachers/teacher/:id" element={<TeacherDetails />} />
                         <Route path="/Admin/teachers/chooseclass" element={<ChooseClass situation="Teacher" />} />
                         <Route path="/Admin/teachers/choosesubject/:id" element={<ChooseSubject situation="Norm" />} />
                         <Route path="/Admin/teachers/choosesubject/:classID/:teacherID" element={<ChooseSubject situation="Teacher" />} />
                         <Route path="/Admin/teachers/addteacher/:id" element={<AddTeacher />} />
-
+                        <Route path="/Admin/personnel" element={<PersonnelManagement />} />
+                        <Route path="/Admin/alumni" element={<AdminAlumniManagement />} />
                         <Route path="/logout" element={<Logout />} />
                     </Routes>
                 </Box>
             </Box>
-        </>
+        </Box>
     );
-}
+};
 
-export default AdminDashboard
-
-const styles = {
-    boxStyled: {
-        backgroundColor: (theme) =>
-            theme.palette.mode === 'light'
-                ? theme.palette.grey[100]
-                : theme.palette.grey[900],
-        flexGrow: 1,
-        height: '100vh',
-        overflow: 'auto',
-    },
-    toolBarStyled: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        px: [1],
-    },
-    drawerStyled: {
-        display: "flex"
-    },
-    hideDrawer: {
-        display: 'flex',
-        '@media (max-width: 600px)': {
-            display: 'none',
-        },
-    },
-}
+export default AdminDashboard;

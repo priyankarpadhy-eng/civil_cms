@@ -5,6 +5,22 @@ const teacherSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    designation: {
+        type: String,
+        default: "Assistant Professor"
+    },
+    isHOD: {
+        type: Boolean,
+        default: false
+    },
+    profilePic: {
+        type: String,
+        default: ""
+    },
+    hodMessage: {
+        type: String,
+        default: ""
+    },
     email: {
         type: String,
         unique: true,
@@ -13,6 +29,24 @@ const teacherSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
+    },
+    officialEmail: {
+        type: String,
+    },
+    subjectExpertise: {
+        type: String,
+    },
+    education: {
+        type: String,
+    },
+    officeLocation: {
+        type: String,
+    },
+    experience: {
+        type: String,
+    },
+    projects: {
+        type: String,
     },
     role: {
         type: String,

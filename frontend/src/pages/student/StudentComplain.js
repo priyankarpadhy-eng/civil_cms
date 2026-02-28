@@ -1,116 +1,358 @@
 import { useEffect, useState } from 'react';
-import { Box, CircularProgress, Stack, TextField, Typography } from '@mui/material';
+import { CircularProgress } from '@mui/material';
+import styled, { keyframes } from 'styled-components';
 import Popup from '../../components/Popup';
-import { BlueButton } from '../../components/buttonStyles';
 import { addStuff } from '../../redux/userRelated/userHandle';
 import { useDispatch, useSelector } from 'react-redux';
+import CampaignRoundedIcon from '@mui/icons-material/CampaignRounded';
+import CalendarTodayRoundedIcon from '@mui/icons-material/CalendarTodayRounded';
+import EditNoteRoundedIcon from '@mui/icons-material/EditNoteRounded';
+import SendRoundedIcon from '@mui/icons-material/SendRounded';
+
+const fadeUp = keyframes`
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+`;
 
 const StudentComplain = () => {
     const [complaint, setComplaint] = useState("");
     const [date, setDate] = useState("");
-
-    const dispatch = useDispatch()
-
+    const dispatch = useDispatch();
     const { status, currentUser, error } = useSelector(state => state.user);
 
-    const user = currentUser._id
-    const school = currentUser.school._id
-    const address = "Complain"
+    const user = currentUser._id;
+    const school = currentUser.school._id;
+    const address = "Complain";
 
-    const [loader, setLoader] = useState(false)
+    const [loader, setLoader] = useState(false);
     const [message, setMessage] = useState("");
     const [showPopup, setShowPopup] = useState(false);
-
-    const fields = {
-        user,
-        date,
-        complaint,
-        school,
-    };
+    const [submitted, setSubmitted] = useState(false);
 
     const submitHandler = (event) => {
-        event.preventDefault()
-        setLoader(true)
-        dispatch(addStuff(fields, address))
+        event.preventDefault();
+        setLoader(true);
+        dispatch(addStuff({ user, date, complaint, school }, address));
     };
 
     useEffect(() => {
         if (status === "added") {
-            setLoader(false)
-            setShowPopup(true)
-            setMessage("Done Successfully")
+            setLoader(false);
+            setSubmitted(true);
+            setMessage("Complaint submitted successfully!");
+            setShowPopup(true);
+            setComplaint("");
+            setDate("");
+        } else if (error) {
+            setLoader(false);
+            setMessage("Network Error — please try again.");
+            setShowPopup(true);
         }
-        else if (error) {
-            setLoader(false)
-            setShowPopup(true)
-            setMessage("Network Error")
-        }
-    }, [status, error])
+    }, [status, error]);
 
     return (
-        <>
-            <Box
-                sx={{
-                    flex: '1 1 auto',
-                    alignItems: 'center',
-                    display: 'flex',
-                    justifyContent: 'center'
-                }}
-            >
-                <Box
-                    sx={{
-                        maxWidth: 550,
-                        px: 3,
-                        py: '100px',
-                        width: '100%'
-                    }}
-                >
-                    <div>
-                        <Stack spacing={1} sx={{ mb: 3 }}>
-                            <Typography variant="h4">Complain</Typography>
-                        </Stack>
-                        <form onSubmit={submitHandler}>
-                            <Stack spacing={3}>
-                                <TextField
-                                    fullWidth
-                                    label="Select Date"
-                                    type="date"
-                                    value={date}
-                                    onChange={(event) => setDate(event.target.value)} required
-                                    InputLabelProps={{
-                                        shrink: true,
-                                    }}
-                                />
-                                <TextField
-                                    fullWidth
-                                    label="Write your complain"
-                                    variant="outlined"
-                                    value={complaint}
-                                    onChange={(event) => {
-                                        setComplaint(event.target.value);
-                                    }}
-                                    required
-                                    multiline
-                                    maxRows={4}
-                                />
-                            </Stack>
-                            <BlueButton
-                                fullWidth
-                                size="large"
-                                sx={{ mt: 3 }}
-                                variant="contained"
-                                type="submit"
-                                disabled={loader}
-                            >
-                                {loader ? <CircularProgress size={24} color="inherit" /> : "Add"}
-                            </BlueButton>
-                        </form>
-                    </div>
-                </Box>
-            </Box>
+        <Wrapper>
+            <FormSection>
+                {/* Header */}
+                <FormHeader>
+                    <IconCircle>
+                        <CampaignRoundedIcon sx={{ fontSize: 28, color: '#fff' }} />
+                    </IconCircle>
+                    <HeaderText>
+                        <FormTitle>Submit a Complaint</FormTitle>
+                        <FormSub>Civil Engineering Department · IGIT Sarang</FormSub>
+                    </HeaderText>
+                </FormHeader>
+
+                <Divider />
+
+                {/* Info Banner */}
+                <InfoBanner>
+                    <span>ℹ️</span>
+                    <span>
+                        Your complaint will be reviewed by the department admin. Please be clear and specific.
+                    </span>
+                </InfoBanner>
+
+                {/* Form */}
+                <form onSubmit={submitHandler}>
+                    <FieldGroup>
+                        <FieldLabel>
+                            <CalendarTodayRoundedIcon sx={{ fontSize: 15 }} />
+                            Date
+                        </FieldLabel>
+                        <StyledInput
+                            type="date"
+                            value={date}
+                            onChange={e => setDate(e.target.value)}
+                            required
+                        />
+                    </FieldGroup>
+
+                    <FieldGroup>
+                        <FieldLabel>
+                            <EditNoteRoundedIcon sx={{ fontSize: 15 }} />
+                            Complaint Details
+                        </FieldLabel>
+                        <StyledTextarea
+                            placeholder="Describe your complaint clearly and in detail…"
+                            value={complaint}
+                            onChange={e => setComplaint(e.target.value)}
+                            required
+                            rows={6}
+                        />
+                        <CharCount>{complaint.length} characters</CharCount>
+                    </FieldGroup>
+
+                    <SubmitBtn type="submit" disabled={loader || !date || !complaint.trim()}>
+                        {loader
+                            ? <CircularProgress size={20} sx={{ color: '#fff' }} />
+                            : <><SendRoundedIcon sx={{ fontSize: 18 }} /> Submit Complaint</>
+                        }
+                    </SubmitBtn>
+                </form>
+
+                {/* Previous submissions hint */}
+                <FootNote>
+                    All complaints are confidential and handled within 5–7 working days.
+                </FootNote>
+            </FormSection>
+
+            {/* Side Info */}
+            <SidePanel>
+                <SidePanelTitle>📋 Guidelines</SidePanelTitle>
+                {[
+                    { icon: '🎯', title: 'Be specific', text: 'Describe the issue in detail with dates and context.' },
+                    { icon: '🤝', title: 'Be respectful', text: 'Use appropriate language in your complaint.' },
+                    { icon: '📁', title: 'One issue', text: 'Submit one complaint per form for clarity.' },
+                    { icon: '⏰', title: 'Response time', text: 'Expect a response within 5–7 working days.' },
+                ].map((item, i) => (
+                    <GuideCard key={i}>
+                        <GuideIcon>{item.icon}</GuideIcon>
+                        <GuideText>
+                            <GuideTitle>{item.title}</GuideTitle>
+                            <GuideDesc>{item.text}</GuideDesc>
+                        </GuideText>
+                    </GuideCard>
+                ))}
+            </SidePanel>
+
             <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
-        </>
+        </Wrapper>
     );
 };
 
 export default StudentComplain;
+
+/* ── Styled Components ── */
+
+const Wrapper = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  max-width: 960px;
+  padding-bottom: 48px;
+  @media (max-width: 768px) { grid-template-columns: 1fr; }
+`;
+
+const FormSection = styled.div`
+  background: var(--clr-surface-2);
+  border: 1px solid var(--clr-border);
+  border-radius: 20px;
+  padding: 28px;
+  animation: ${fadeUp} 0.5s var(--ease-out) both;
+`;
+
+const FormHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+`;
+
+const IconCircle = styled.div`
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #F59E0B, #EF4444);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(245,158,11,0.35);
+`;
+
+const HeaderText = styled.div``;
+
+const FormTitle = styled.h1`
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--clr-text-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: 3px;
+`;
+
+const FormSub = styled.p`
+  font-size: 0.8rem;
+  color: var(--clr-text-muted);
+  font-weight: 500;
+`;
+
+const Divider = styled.div`
+  height: 1px;
+  background: var(--clr-border);
+  margin-bottom: 20px;
+`;
+
+const InfoBanner = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(59,130,246,0.08);
+  border: 1px solid rgba(59,130,246,0.18);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 0.83rem;
+  color: rgba(240,239,255,0.75);
+  line-height: 1.6;
+  margin-bottom: 24px;
+`;
+
+const FieldGroup = styled.div`
+  margin-bottom: 20px;
+`;
+
+const FieldLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--clr-text-secondary);
+  margin-bottom: 8px;
+`;
+
+const StyledInput = styled.input`
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--clr-border);
+  border-radius: 12px;
+  color: var(--clr-text-primary);
+  font-size: 0.9rem;
+  font-family: var(--font-base);
+  outline: none;
+  transition: all 0.2s var(--ease-out);
+  color-scheme: dark;
+  &:hover { border-color: var(--clr-border-hover); }
+  &:focus {
+    border-color: var(--clr-primary);
+    background: rgba(108,99,255,0.06);
+    box-shadow: 0 0 0 3px var(--clr-primary-glow);
+  }
+`;
+
+const StyledTextarea = styled.textarea`
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--clr-border);
+  border-radius: 12px;
+  color: var(--clr-text-primary);
+  font-size: 0.9rem;
+  font-family: var(--font-base);
+  outline: none;
+  resize: vertical;
+  transition: all 0.2s var(--ease-out);
+  line-height: 1.6;
+  &::placeholder { color: var(--clr-text-muted); }
+  &:hover { border-color: var(--clr-border-hover); }
+  &:focus {
+    border-color: var(--clr-primary);
+    background: rgba(108,99,255,0.06);
+    box-shadow: 0 0 0 3px var(--clr-primary-glow);
+  }
+`;
+
+const CharCount = styled.p`
+  font-size: 0.72rem;
+  color: var(--clr-text-muted);
+  text-align: right;
+  margin-top: 4px;
+`;
+
+const SubmitBtn = styled.button`
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #F59E0B, #EF4444);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: var(--font-base);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 20px rgba(245,158,11,0.3);
+  transition: all 0.25s var(--ease-out);
+  margin-bottom: 16px;
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(245,158,11,0.4);
+  }
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+`;
+
+const FootNote = styled.p`
+  font-size: 0.78rem;
+  color: var(--clr-text-muted);
+  text-align: center;
+`;
+
+const SidePanel = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: ${fadeUp} 0.5s 0.1s var(--ease-out) both;
+`;
+
+const SidePanelTitle = styled.h2`
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--clr-text-primary);
+  margin-bottom: 4px;
+`;
+
+const GuideCard = styled.div`
+  display: flex;
+  gap: 14px;
+  background: var(--clr-surface-2);
+  border: 1px solid var(--clr-border);
+  border-radius: 14px;
+  padding: 16px;
+  transition: all 0.2s;
+  &:hover {
+    border-color: rgba(108,99,255,0.25);
+    transform: translateX(3px);
+  }
+`;
+
+const GuideIcon = styled.div`
+  font-size: 1.4rem;
+  flex-shrink: 0;
+`;
+
+const GuideText = styled.div``;
+
+const GuideTitle = styled.p`
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--clr-text-primary);
+  margin-bottom: 3px;
+`;
+
+const GuideDesc = styled.p`
+  font-size: 0.78rem;
+  color: var(--clr-text-muted);
+  line-height: 1.5;
+`;

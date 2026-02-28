@@ -7,11 +7,15 @@ const sclassCreate = async (req, res) => {
     try {
         const sclass = new Sclass({
             sclassName: req.body.sclassName,
+            passoutYear: req.body.passoutYear,
+            batchNumber: req.body.batchNumber,
             school: req.body.adminID
         });
 
         const existingSclassByName = await Sclass.findOne({
             sclassName: req.body.sclassName,
+            passoutYear: req.body.passoutYear,
+            batchNumber: req.body.batchNumber,
             school: req.body.adminID
         });
 
@@ -29,9 +33,21 @@ const sclassCreate = async (req, res) => {
 
 const sclassList = async (req, res) => {
     try {
-        let sclasses = await Sclass.find({ school: req.params.id })
+        let sclasses = await Sclass.find({ school: req.params.id });
         if (sclasses.length > 0) {
-            res.send(sclasses)
+            // Include student and subject counts for each class
+            const detailedSclasses = await Promise.all(sclasses.map(async (sclass) => {
+                const [studentCount, subjectCount] = await Promise.all([
+                    Student.countDocuments({ sclassName: sclass._id }),
+                    Subject.countDocuments({ sclassName: sclass._id })
+                ]);
+                return {
+                    ...sclass.toObject(),
+                    studentCount,
+                    subjectCount
+                };
+            }));
+            res.send(detailedSclasses);
         } else {
             res.send({ message: "No sclasses found" });
         }

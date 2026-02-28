@@ -2,6 +2,17 @@ const bcrypt = require('bcrypt');
 const Student = require('../models/studentSchema.js');
 const Subject = require('../models/subjectSchema.js');
 
+const generateUniqueSlug = async (name) => {
+    let baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    let slug = baseSlug;
+    let counter = 1;
+    while (await Student.findOne({ portfolioSlug: slug })) {
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+    }
+    return slug;
+};
+
 const studentRegister = async (req, res) => {
     try {
         const salt = await bcrypt.genSalt(10);
@@ -17,10 +28,13 @@ const studentRegister = async (req, res) => {
             res.send({ message: 'Roll Number already exists' });
         }
         else {
+            const portfolioSlug = await generateUniqueSlug(req.body.name);
+
             const student = new Student({
                 ...req.body,
                 school: req.body.adminID,
-                password: hashedPass
+                password: hashedPass,
+                portfolioSlug
             });
 
             let result = await student.save();
@@ -28,6 +42,33 @@ const studentRegister = async (req, res) => {
             result.password = undefined;
             res.send(result);
         }
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+const studentsRegister = async (req, res) => {
+    try {
+        const students = req.body.students; // Expecting an array of student objects
+        const adminID = req.body.adminID;
+        const sclassName = req.body.sclassName;
+
+        const salt = await bcrypt.genSalt(10);
+
+        const processedStudents = await Promise.all(students.map(async (student) => {
+            const hashedPass = await bcrypt.hash(student.password || "123456", salt); // Default password if not provided
+            const portfolioSlug = await generateUniqueSlug(student.name);
+            return {
+                ...student,
+                school: adminID,
+                sclassName: sclassName,
+                password: hashedPass,
+                portfolioSlug
+            };
+        }));
+
+        const results = await Student.insertMany(processedStudents);
+        res.send(results);
     } catch (err) {
         res.status(500).json(err);
     }
@@ -44,6 +85,11 @@ const studentLogIn = async (req, res) => {
                 student.password = undefined;
                 student.examResult = undefined;
                 student.attendance = undefined;
+
+                if (student.isBranchRep) {
+                    student.role = "BranchRep";
+                }
+
                 res.send(student);
             } else {
                 res.send({ message: "Invalid password" });
@@ -130,7 +176,7 @@ const updateStudent = async (req, res) => {
     try {
         if (req.body.password) {
             const salt = await bcrypt.genSalt(10)
-            res.body.password = await bcrypt.hash(res.body.password, salt)
+            req.body.password = await bcrypt.hash(req.body.password, salt)
         }
         let result = await Student.findByIdAndUpdate(req.params.id,
             { $set: req.body },
@@ -271,9 +317,29 @@ const removeStudentAttendance = async (req, res) => {
     }
 };
 
+const getStudentBySlug = async (req, res) => {
+    try {
+        let student = await Student.findOne({ portfolioSlug: req.params.slug })
+            .populate("school", "schoolName")
+            .populate("sclassName", "sclassName")
+            .populate("examResult.subName", "subName")
+            .populate("attendance.subName", "subName sessions");
+        if (student) {
+            student.password = undefined;
+            res.send(student);
+        }
+        else {
+            res.status(404).send({ message: "Portfolio not found" });
+        }
+    } catch (err) {
+        res.status(500).json(err);
+    }
+}
+
 
 module.exports = {
     studentRegister,
+    studentsRegister,
     studentLogIn,
     getStudents,
     getStudentDetail,
@@ -288,4 +354,5 @@ module.exports = {
     clearAllStudentsAttendance,
     removeStudentAttendanceBySubject,
     removeStudentAttendance,
+    getStudentBySlug
 };

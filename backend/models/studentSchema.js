@@ -9,6 +9,14 @@ const studentSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    registrationNum: {
+        type: String,
+        unique: true
+    },
+    currentSemester: {
+        type: Number,
+        default: 1
+    },
     password: {
         type: String,
         required: true
@@ -26,6 +34,44 @@ const studentSchema = new mongoose.Schema({
     role: {
         type: String,
         default: "Student"
+    },
+    isBranchRep: {
+        type: Boolean,
+        default: false
+    },
+    section: {
+        type: String,
+        default: 'A'
+    },
+    isCDC: {
+        type: Boolean,
+        default: false
+    },
+    isAlumni: {
+        type: Boolean,
+        default: false
+    },
+    profilePic: {
+        type: String,
+    },
+    biography: {
+        type: String,
+    },
+    company: {
+        type: String,
+    },
+    jobTitle: {
+        type: String,
+    },
+    faceData: {
+        type: String, // String to store base64 image or descriptor
+    },
+    faceCaptured: {
+        type: Boolean,
+        default: false
+    },
+    faceDescriptor: {
+        type: [Number], // Store 128-float face descriptor
     },
     examResult: [
         {
@@ -54,7 +100,16 @@ const studentSchema = new mongoose.Schema({
             ref: 'subject',
             required: true
         }
-    }]
+    }],
+    portfolioSlug: {
+        type: String,
+        unique: true,
+        sparse: true // Allows null/empty for existing records until updated
+    },
+    portfolioTheme: {
+        type: String,
+        default: 'modern'
+    }
 });
 
 module.exports = mongoose.model("student", studentSchema);

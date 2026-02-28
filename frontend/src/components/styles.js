@@ -7,23 +7,34 @@ import {
     AppBar as MuiAppBar,
 } from "@mui/material";
 
-const drawerWidth = 240
+const drawerWidth = 260;
 
 export const StyledTableCell = styled(TableCell)(({ theme }) => ({
     [`&.${tableCellClasses.head}`]: {
-        backgroundColor: theme.palette.common.black,
-        color: theme.palette.common.white,
+        background: 'var(--clr-surface-2)',
+        color: 'var(--clr-text-muted)',
+        fontWeight: 800,
+        fontSize: '0.72rem',
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+        borderBottom: '1px solid var(--clr-border)',
+        padding: '16px 20px',
     },
     [`&.${tableCellClasses.body}`]: {
-        fontSize: 14,
+        fontSize: '0.9rem',
+        color: 'var(--clr-text-primary)',
+        fontWeight: 500,
+        borderBottom: '1px solid var(--clr-border)',
+        padding: '14px 20px',
     },
 }));
 
-export const StyledTableRow = styled(TableRow)(({ theme }) => ({
-    '&:nth-of-type(odd)': {
-        backgroundColor: theme.palette.action.hover,
+export const StyledTableRow = styled(TableRow)(() => ({
+    transition: 'all 0.2s ease',
+    background: 'var(--clr-surface-1)',
+    '&:hover': {
+        background: 'var(--clr-surface-2) !important',
     },
-    // hide last border
     '&:last-child td, &:last-child th': {
         border: 0,
     },
