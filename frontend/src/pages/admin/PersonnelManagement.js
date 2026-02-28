@@ -23,7 +23,7 @@ import { getAllTeachers } from '../../redux/teacherRelated/teacherHandle';
 import { getSclassStudents } from '../../redux/sclassRelated/sclassHandle';
 import { updateUser } from '../../redux/userRelated/userHandle';
 import styled from 'styled-components';
-import axios from 'axios';
+import { supabase } from '../../supabaseClient';
 
 const PersonnelManagement = () => {
     const dispatch = useDispatch();
@@ -36,12 +36,16 @@ const PersonnelManagement = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [tRes, sRes] = await Promise.all([
-                axios.get(`${process.env.REACT_APP_BASE_URL}/Teachers/${currentUser._id}`),
-                axios.get(`${process.env.REACT_APP_BASE_URL}/Students/${currentUser._id}`)
+            const [{ data: tData, error: tErr }, { data: sData, error: sErr }] = await Promise.all([
+                supabase.from('teachers').select('*').eq('school_id', currentUser.id || currentUser._id),
+                supabase.from('students').select('*, classes:sclass_id (*)').eq('school_id', currentUser.id || currentUser._id)
             ]);
-            setTeachers(tRes.data);
-            setStudents(sRes.data);
+
+            if (tErr) throw tErr;
+            if (sErr) throw sErr;
+
+            setTeachers(tData || []);
+            setStudents(sData || []);
         } catch (err) {
             console.error(err);
         }
@@ -50,11 +54,13 @@ const PersonnelManagement = () => {
 
     useEffect(() => {
         fetchData();
-    }, [currentUser._id]);
+    }, [currentUser]);
 
     const handleToggle = async (id, role, field, value) => {
         try {
-            await axios.put(`${process.env.REACT_APP_BASE_URL}/${role}/${id}`, { [field]: value });
+            const table = role === 'Teacher' ? 'teachers' : 'students';
+            const { error } = await supabase.from(table).update({ [field]: value }).eq('id', id);
+            if (error) throw error;
             fetchData(); // Refresh
         } catch (err) {
             console.error(err);

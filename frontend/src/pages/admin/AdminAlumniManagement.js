@@ -16,7 +16,7 @@ import {
     IconButton,
     Tooltip
 } from '@mui/material';
-import axios from 'axios';
+import { supabase } from '../../supabaseClient';
 import { CheckCircleRounded, CancelRounded, PersonRounded } from '@mui/icons-material';
 import styled from 'styled-components';
 
@@ -28,8 +28,13 @@ const AdminAlumniManagement = () => {
     const fetchAlumni = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(`${process.env.REACT_APP_BASE_URL}/AlumniList/${currentUser._id}`);
-            setAlumni(res.data);
+            const { data, error } = await supabase
+                .from('alumni')
+                .select('*')
+                .eq('school_id', currentUser.id || currentUser._id);
+
+            if (error) throw error;
+            setAlumni(data || []);
         } catch (err) {
             console.error("Error fetching alumni:", err);
         }
@@ -38,11 +43,16 @@ const AdminAlumniManagement = () => {
 
     useEffect(() => {
         fetchAlumni();
-    }, []);
+    }, [currentUser]);
 
     const handleApprove = async (id) => {
         try {
-            await axios.put(`${process.env.REACT_APP_BASE_URL}/AlumniApprove/${id}`);
+            const { error } = await supabase
+                .from('alumni')
+                .update({ isApproved: true })
+                .eq('id', id);
+
+            if (error) throw error;
             fetchAlumni();
         } catch (err) {
             console.error("Error approving alumni:", err);
@@ -52,7 +62,12 @@ const AdminAlumniManagement = () => {
     const handleReject = async (id) => {
         if (window.confirm("Are you sure you want to reject and delete this registration?")) {
             try {
-                await axios.delete(`${process.env.REACT_APP_BASE_URL}/AlumniReject/${id}`);
+                const { error } = await supabase
+                    .from('alumni')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
                 fetchAlumni();
             } catch (err) {
                 console.error("Error rejecting alumni:", err);

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { motion } from 'framer-motion';
-import axios from 'axios';
+import { supabase } from '../supabaseClient';
 import {
     Grid,
     Box,
@@ -35,10 +35,15 @@ const AlumniPage = () => {
     useEffect(() => {
         const fetchAlumni = async () => {
             try {
-                // Using dummy data if API fails or is empty for preview
-                const res = await axios.get(`${process.env.REACT_APP_BASE_URL}/PublicAlumni`);
-                const data = res.data.length > 0 ? res.data : [
-                    { name: "Rahul Sharma", passoutYear: 2018, company: "L&T Construction", jobTitle: "Senior Project Manager", biography: "IGIT Sarang provided the foundation for my career in mega-structures. Proud civil engineer." },
+                // Fetch from supabase where is_alumni is true
+                const { data: resData, error } = await supabase
+                    .from('students')
+                    .select('*')
+                    .eq('is_alumni', true);
+
+                if (error) throw error;
+                const data = resData && resData.length > 0 ? resData : [
+                    { name: "Rahul Sharma", passoutYear: 2018, company: "L&T Construction", jobTitle: "Senior Project Manager", biography: "IGIT Sarang provided the foundation for my career in mega-structures." },
                     { name: "Sneh Lata", passoutYear: 2020, company: "Public Works Dept.", jobTitle: "Assistant Engineer", biography: "Dedicated to building sustainable urban infrastructure in Odisha." },
                     { name: "Vikram Das", passoutYear: 2015, company: "Tata Steel", jobTitle: "Lead Structural Consultant", biography: "Structural engineering is an art I learned in the laboratories of IGIT." }
                 ];

@@ -32,7 +32,7 @@ import {
 import styled, { keyframes } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import Webcam from 'react-webcam';
-import axios from 'axios';
+import { supabase } from '../../supabaseClient';
 import { useSelector } from 'react-redux';
 import * as XLSX from 'xlsx';
 
@@ -89,12 +89,17 @@ const TeacherFaceAttendance = () => {
 
     const fetchTeacherSubjects = async () => {
         try {
-            const res = await axios.get(`${process.env.REACT_APP_BASE_URL}/TeacherSubjects/${currentUser._id}`);
-            if (Array.isArray(res.data)) {
-                setSubjects(res.data);
-                if (res.data.length > 0) {
-                    const firstSub = res.data[0];
-                    setSelectedSubject(firstSub);
+            const { data, error } = await supabase
+                .from('subjects')
+                .select('*, sclassName:sclass_id (*)')
+                .eq('teacher_id', currentUser.id || currentUser._id);
+
+            if (error) throw error;
+            if (Array.isArray(data)) {
+                setSubjects(data);
+                if (data.length > 0) {
+                    const firstSub = data[0];
+                    setSelectedSubject({ ...firstSub, _id: firstSub.id });
                     setSelectedSection(firstSub.section || 'A');
                 }
             }
@@ -104,20 +109,28 @@ const TeacherFaceAttendance = () => {
     };
 
     const fetchStudents = async () => {
-        if (!selectedSubject?.sclassName?._id) return;
+        const sclassId = selectedSubject?.sclassName?._id || selectedSubject?.sclassName?.id;
+        if (!sclassId) return;
+
         setLoading(true);
         try {
-            const res = await axios.get(`${process.env.REACT_APP_BASE_URL}/Sclass/Students/${selectedSubject.sclassName._id}`);
-            if (Array.isArray(res.data)) {
-                const filtered = res.data.filter(s => s.section === selectedSection);
+            const { data, error } = await supabase
+                .from('students')
+                .select('*')
+                .eq('sclass_id', sclassId);
+
+            if (error) throw error;
+
+            if (Array.isArray(data)) {
+                const filtered = data.filter(s => s.section === selectedSection).map(s => ({ ...s, _id: s.id }));
                 setStudents(filtered);
 
                 // Create Face Matcher for this class
                 const labeledDescriptors = filtered
-                    .filter(s => s.faceDescriptor && s.faceDescriptor.length === 128)
+                    .filter(s => s.face_descriptor && s.face_descriptor.length === 128)
                     .map(s => new faceapi.LabeledFaceDescriptors(
-                        s._id,
-                        [new Float32Array(s.faceDescriptor)]
+                        s.id,
+                        [new Float32Array(s.face_descriptor)]
                     ));
 
                 if (labeledDescriptors.length > 0) {
@@ -159,7 +172,7 @@ const TeacherFaceAttendance = () => {
             const recognized = results
                 .filter(res => res.match.label !== 'unknown')
                 .map(res => {
-                    const student = students.find(s => s._id === res.match.label);
+                    const student = students.find(s => s.id === res.match.label || s._id === res.match.label);
                     return {
                         ...student,
                         distance: res.match.distance,
@@ -171,7 +184,7 @@ const TeacherFaceAttendance = () => {
 
             // Auto-mark attendance for newly identified students
             recognized.forEach(student => {
-                const alreadyMarked = attendanceLog.some(log => log.rollNum === student.rollNum);
+                const alreadyMarked = attendanceLog.some(log => log.rollNum === student.roll_num || log.rollNum === student.rollNum);
                 if (!alreadyMarked) {
                     handleMarkAttendance(student);
                 }
@@ -199,15 +212,25 @@ const TeacherFaceAttendance = () => {
             setAttendanceLog(prev => [{
                 id: Date.now(),
                 name: student.name,
-                rollNum: student.rollNum,
+                rollNum: student.roll_num || student.rollNum,
                 time: new Date().toLocaleTimeString()
             }, ...prev]);
 
-            await axios.put(`${process.env.REACT_APP_BASE_URL}/StudentAttendance/${student._id}`, {
-                subName: selectedSubject._id,
+            const currentAttendance = student.attendance || [];
+            const newRecord = {
+                subName: selectedSubject.id || selectedSubject._id,
                 status: 'Present',
                 date: selectedDate
-            });
+            };
+
+            const updatedAttendance = [...currentAttendance, newRecord];
+
+            const { error } = await supabase
+                .from('students')
+                .update({ attendance: updatedAttendance })
+                .eq('id', student.id || student._id);
+
+            if (error) throw error;
 
             setSnackbar({
                 open: true,
