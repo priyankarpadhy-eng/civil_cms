@@ -18,7 +18,11 @@ export const getAllSclasses = (id, address) => async (dispatch) => {
     try {
         const { data, error } = await supabase
             .from('classes')
-            .select('*')
+            .select(`
+                *,
+                students(count),
+                subjects(count)
+            `)
             .eq('school_id', id);
 
         if (error) {

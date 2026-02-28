@@ -50,7 +50,9 @@ const ShowClasses = () => {
     _id: item.id, // Ensure frontend _id maps to Supabase id
     sclassName: item.sclass_name,
     batchNumber: item.batch_number,
-    passoutYear: item.passout_year
+    passoutYear: item.passout_year,
+    studentCount: item.students?.[0]?.count || 0,
+    subjectCount: item.subjects?.[0]?.count || 0
   })).filter(item =>
     item.sclassName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.batchNumber?.toLowerCase().includes(searchTerm.toLowerCase())
