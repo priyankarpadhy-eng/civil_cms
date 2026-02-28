@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { supabase } from '../../supabaseClient';
 import {
     getRequest,
     getSuccess,
@@ -11,11 +11,19 @@ export const getAllStudents = (id) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/Students/${id}`);
-        if (result.data.message) {
-            dispatch(getFailed(result.data.message));
+        const { data, error } = await supabase
+            .from('students')
+            .select('*')
+            .eq('school_id', id);
+
+        if (error) {
+            dispatch(getFailed(error.message));
         } else {
-            dispatch(getSuccess(result.data));
+            if (data && data.length > 0) {
+                dispatch(getSuccess(data));
+            } else {
+                dispatch(getFailed("No students found"));
+            }
         }
     } catch (error) {
         dispatch(getError(error.message));
@@ -26,11 +34,13 @@ export const updateStudentFields = (id, fields, address) => async (dispatch) => 
     dispatch(getRequest());
 
     try {
-        const result = await axios.put(`${process.env.REACT_APP_BASE_URL}/${address}/${id}`, fields, {
-            headers: { 'Content-Type': 'application/json' },
-        });
-        if (result.data.message) {
-            dispatch(getFailed(result.data.message));
+        const { error } = await supabase
+            .from('students')
+            .update(fields)
+            .eq('id', id);
+
+        if (error) {
+            dispatch(getFailed(error.message));
         } else {
             dispatch(stuffDone());
         }
@@ -41,15 +51,7 @@ export const updateStudentFields = (id, fields, address) => async (dispatch) => 
 
 export const removeStuff = (id, address) => async (dispatch) => {
     dispatch(getRequest());
-
-    try {
-        const result = await axios.put(`${process.env.REACT_APP_BASE_URL}/${address}/${id}`);
-        if (result.data.message) {
-            dispatch(getFailed(result.data.message));
-        } else {
-            dispatch(stuffDone());
-        }
-    } catch (error) {
-        dispatch(getError(error.message));
-    }
+    // Since we're using JSONB for many fields like attendance, 
+    // removal logic would usually involve updating the JSONB field.
+    dispatch(getError("Removal logic via Supabase requires specific implementation per field."));
 }

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { supabase } from '../../supabaseClient';
 import {
     getRequest,
     getSuccess,
@@ -16,11 +16,19 @@ export const getAllSclasses = (id, address) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/${address}List/${id}`);
-        if (result.data.message) {
-            dispatch(getFailedTwo(result.data.message));
+        const { data, error } = await supabase
+            .from('classes')
+            .select('*')
+            .eq('school_id', id);
+
+        if (error) {
+            dispatch(getFailedTwo(error.message));
         } else {
-            dispatch(getSuccess(result.data));
+            if (data && data.length > 0) {
+                dispatch(getSuccess(data));
+            } else {
+                dispatch(getFailedTwo("No classes found"));
+            }
         }
     } catch (error) {
         dispatch(getError(error.message));
@@ -31,11 +39,19 @@ export const getClassStudents = (id) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/Sclass/Students/${id}`);
-        if (result.data.message) {
-            dispatch(getFailedTwo(result.data.message));
+        const { data, error } = await supabase
+            .from('students')
+            .select('*')
+            .eq('sclass_id', id);
+
+        if (error) {
+            dispatch(getFailedTwo(error.message));
         } else {
-            dispatch(getStudentsSuccess(result.data));
+            if (data && data.length > 0) {
+                dispatch(getStudentsSuccess(data));
+            } else {
+                dispatch(getFailedTwo("No students found in this class"));
+            }
         }
     } catch (error) {
         dispatch(getError(error.message));
@@ -46,10 +62,14 @@ export const getClassDetails = (id, address) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/${address}/${id}`);
-        if (result.data) {
-            dispatch(detailsSuccess(result.data));
-        }
+        const { data, error } = await supabase
+            .from('classes')
+            .select('*, school:school_id (*)')
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+        dispatch(detailsSuccess(data));
     } catch (error) {
         dispatch(getError(error.message));
     }
@@ -59,11 +79,19 @@ export const getSubjectList = (id, address) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/${address}/${id}`);
-        if (result.data.message) {
-            dispatch(getFailed(result.data.message));
+        const { data, error } = await supabase
+            .from('subjects')
+            .select('*')
+            .eq(address === "ClassSubjects" ? 'sclass_id' : 'school_id', id);
+
+        if (error) {
+            dispatch(getFailed(error.message));
         } else {
-            dispatch(getSubjectsSuccess(result.data));
+            if (data && data.length > 0) {
+                dispatch(getSubjectsSuccess(data));
+            } else {
+                dispatch(getFailed("No subjects found"));
+            }
         }
     } catch (error) {
         dispatch(getError(error.message));
@@ -74,11 +102,20 @@ export const getTeacherFreeClassSubjects = (id) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/FreeSubjectList/${id}`);
-        if (result.data.message) {
-            dispatch(getFailed(result.data.message));
+        const { data, error } = await supabase
+            .from('subjects')
+            .select('*')
+            .is('teacher_id', null)
+            .eq('sclass_id', id);
+
+        if (error) {
+            dispatch(getFailed(error.message));
         } else {
-            dispatch(getSubjectsSuccess(result.data));
+            if (data && data.length > 0) {
+                dispatch(getSubjectsSuccess(data));
+            } else {
+                dispatch(getFailed("No free subjects found in this class"));
+            }
         }
     } catch (error) {
         dispatch(getError(error.message));
@@ -89,10 +126,14 @@ export const getSubjectDetails = (id, address) => async (dispatch) => {
     dispatch(getSubDetailsRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/${address}/${id}`);
-        if (result.data) {
-            dispatch(getSubDetailsSuccess(result.data));
-        }
+        const { data, error } = await supabase
+            .from('subjects')
+            .select('*, classes:sclass_id (*), school:school_id (*)')
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+        dispatch(getSubDetailsSuccess(data));
     } catch (error) {
         dispatch(getError(error.message));
     }

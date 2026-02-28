@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { supabase } from '../../supabaseClient';
 import {
     getRequest,
     getSuccess,
@@ -10,11 +10,19 @@ export const getAllNotices = (id, address) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/${address}List/${id}`);
-        if (result.data.message) {
-            dispatch(getFailed(result.data.message));
+        const { data, error } = await supabase
+            .from('notices')
+            .select('*')
+            .eq('school_id', id);
+
+        if (error) {
+            dispatch(getFailed(error.message));
         } else {
-            dispatch(getSuccess(result.data));
+            if (data && data.length > 0) {
+                dispatch(getSuccess(data));
+            } else {
+                dispatch(getFailed("No notices found"));
+            }
         }
     } catch (error) {
         dispatch(getError(error.message));

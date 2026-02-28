@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { supabase } from '../../supabaseClient';
 import {
     getRequest,
     getSuccess,
@@ -12,11 +12,19 @@ export const getAllTeachers = (id) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/Teachers/${id}`);
-        if (result.data.message) {
-            dispatch(getFailed(result.data.message));
+        const { data, error } = await supabase
+            .from('teachers')
+            .select('*')
+            .eq('school_id', id);
+
+        if (error) {
+            dispatch(getFailed(error.message));
         } else {
-            dispatch(getSuccess(result.data));
+            if (data && data.length > 0) {
+                dispatch(getSuccess(data));
+            } else {
+                dispatch(getFailed("No teachers found"));
+            }
         }
     } catch (error) {
         dispatch(getError(error.message));
@@ -27,10 +35,14 @@ export const getTeacherDetails = (id) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/Teacher/${id}`);
-        if (result.data) {
-            dispatch(doneSuccess(result.data));
-        }
+        const { data, error } = await supabase
+            .from('teachers')
+            .select('*, school:school_id (*), teach_sclass:teach_sclass_id (*), teach_subject:teach_subject_id (*)')
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+        dispatch(doneSuccess(data));
     } catch (error) {
         dispatch(getError(error.message));
     }
@@ -40,9 +52,12 @@ export const updateTeachSubject = (teacherId, teachSubject) => async (dispatch) 
     dispatch(getRequest());
 
     try {
-        await axios.put(`${process.env.REACT_APP_BASE_URL}/TeacherSubject`, { teacherId, teachSubject }, {
-            headers: { 'Content-Type': 'application/json' },
-        });
+        const { error } = await supabase
+            .from('teachers')
+            .update({ teach_subject_id: teachSubject })
+            .eq('id', teacherId);
+
+        if (error) throw error;
         dispatch(postDone());
     } catch (error) {
         dispatch(getError(error.message));

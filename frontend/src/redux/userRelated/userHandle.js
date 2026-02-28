@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { supabase } from '../../supabaseClient';
 import {
     authRequest,
     stuffAdded,
@@ -7,24 +7,43 @@ import {
     authError,
     authLogout,
     doneSuccess,
-    getDeleteSuccess,
     getRequest,
-    getFailed,
     getError,
 } from './userSlice';
+
+const mapAddressToTable = (address) => {
+    const map = {
+        'Student': 'students',
+        'Admin': 'admins',
+        'Teacher': 'teachers',
+        'Alumni': 'alumni'
+    };
+    return map[address] || address.toLowerCase() + 's';
+};
 
 export const loginUser = (fields, role) => async (dispatch) => {
     dispatch(authRequest());
 
     try {
-        const result = await axios.post(`${process.env.REACT_APP_BASE_URL}/${role}Login`, fields, {
-            headers: { 'Content-Type': 'application/json' },
-        });
-        if (result.data.role) {
-            dispatch(authSuccess(result.data));
-        } else {
-            dispatch(authFailed(result.data.message));
+        const table = mapAddressToTable(role);
+
+        // For simplicity during migration, we query the table directly.
+        // In a production app, you should use Supabase Auth (auth.signInWithPassword).
+        const { data, error } = await supabase
+            .from(table)
+            .select('*')
+            .eq(role === 'Student' ? 'roll_num' : 'email', fields.rollNum || fields.email)
+            .eq('password', fields.password)
+            .single();
+
+        if (error || !data) {
+            dispatch(authFailed(error?.message || "Invalid credentials"));
+            return;
         }
+
+        // Map Postgres snake_case back to frontend camelCase if needed,
+        // but for now, we'll suggest passing data as is.
+        dispatch(authSuccess(data));
     } catch (error) {
         dispatch(authError(error.message));
     }
@@ -34,17 +53,23 @@ export const registerUser = (fields, role) => async (dispatch) => {
     dispatch(authRequest());
 
     try {
-        const result = await axios.post(`${process.env.REACT_APP_BASE_URL}/${role}Reg`, fields, {
-            headers: { 'Content-Type': 'application/json' },
-        });
-        if (result.data.schoolName) {
-            dispatch(authSuccess(result.data));
+        const table = mapAddressToTable(role);
+
+        const { data, error } = await supabase
+            .from(table)
+            .insert([fields])
+            .select()
+            .single();
+
+        if (error) {
+            dispatch(authFailed(error.message));
+            return;
         }
-        else if (result.data.school || result.data.role === "Alumni") {
+
+        if (role === 'Admin') {
+            dispatch(authSuccess(data));
+        } else {
             dispatch(stuffAdded());
-        }
-        else {
-            dispatch(authFailed(result.data.message));
         }
     } catch (error) {
         dispatch(authError(error.message));
@@ -59,96 +84,70 @@ export const getUserDetails = (id, address) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/${address}/${id}`);
-        if (result.data) {
-            dispatch(doneSuccess(result.data));
-        }
+        const table = mapAddressToTable(address);
+        const { data, error } = await supabase
+            .from(table)
+            .select(`
+                *,
+                classes:sclass_id (*),
+                school:school_id (*)
+            `)
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+        dispatch(doneSuccess(data));
     } catch (error) {
         dispatch(getError(error.message));
     }
 }
 
-// export const deleteUser = (id, address) => async (dispatch) => {
-//     dispatch(getRequest());
-
-//     try {
-//         const result = await axios.delete(`${process.env.REACT_APP_BASE_URL}/${address}/${id}`);
-//         if (result.data.message) {
-//             dispatch(getFailed(result.data.message));
-//         } else {
-//             dispatch(getDeleteSuccess());
-//         }
-//     } catch (error) {
-//         dispatch(getError(error));
-//     }
-// }
-
-
 export const deleteUser = (id, address) => async (dispatch) => {
     dispatch(getRequest());
-    dispatch(getFailed("Sorry the delete function has been disabled for now."));
+    dispatch(getError("Delete function is restricted at the moment."));
 }
 
 export const updateUser = (fields, id, address) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.put(`${process.env.REACT_APP_BASE_URL}/${address}/${id}`, fields, {
-            headers: { 'Content-Type': 'application/json' },
-        });
-        if (result.data.schoolName || result.data.role) {
-            dispatch(authSuccess(result.data));
-        }
-        else {
-            dispatch(doneSuccess(result.data));
+        const table = mapAddressToTable(address);
+        const { data, error } = await supabase
+            .from(table)
+            .update(fields)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        if (address === 'Admin' || data.role) {
+            dispatch(authSuccess(data));
+        } else {
+            dispatch(doneSuccess(data));
         }
     } catch (error) {
         dispatch(getError(error.message));
     }
 }
 
-export const addStuff = (fields, address) => async (dispatch) => {
-    dispatch(authRequest());
-
-    try {
-        const result = await axios.post(`${process.env.REACT_APP_BASE_URL}/${address}Create`, fields, {
-            headers: { 'Content-Type': 'application/json' },
-        });
-
-        if (result.data.message) {
-            dispatch(authFailed(result.data.message));
-        } else {
-            dispatch(stuffAdded(result.data));
-        }
-    } catch (error) {
-        dispatch(authError(error.message));
-    }
-};
-
-export const bulkAddStudents = (fields) => async (dispatch) => {
-    dispatch(authRequest());
-    try {
-        const result = await axios.post(`${process.env.REACT_APP_BASE_URL}/StudentsReg`, fields, {
-            headers: { 'Content-Type': 'application/json' },
-        });
-        if (result.data.message) {
-            dispatch(authFailed(result.data.message));
-        } else {
-            dispatch(stuffAdded());
-        }
-    } catch (error) {
-        dispatch(authError(error.message));
-    }
-};
-
 export const getStudentBySlug = (slug) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const result = await axios.get(`${process.env.REACT_APP_BASE_URL}/StudentPortfolio/${slug}`);
-        if (result.data) {
-            dispatch(doneSuccess(result.data));
-        }
+        const { data, error } = await supabase
+            .from('students')
+            .select(`
+                *,
+                classes:sclass_id (*),
+                school:school_id (*),
+                subjects:exam_results->subName (*)
+            `)
+            .eq('portfolio_slug', slug)
+            .single();
+
+        if (error) throw error;
+        dispatch(doneSuccess(data));
     } catch (error) {
         dispatch(getError(error.message));
     }
