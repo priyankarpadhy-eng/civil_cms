@@ -324,7 +324,12 @@ const FaceScanModal = ({ open, onClose, onCapture }) => {
                                 ref={webcamRef}
                                 screenshotFormat="image/jpeg"
                                 mirrored={true}
-                                videoConstraints={{ width: 640, height: 640, facingMode: "user" }}
+                                videoConstraints={{
+                                    width: { ideal: 640 },
+                                    height: { ideal: 640 },
+                                    facingMode: "user",
+                                    aspectRatio: 1
+                                }}
                                 style={{
                                     position: 'absolute',
                                     top: 0, left: 0,
