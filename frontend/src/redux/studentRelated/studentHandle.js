@@ -7,14 +7,17 @@ import {
     stuffDone
 } from './studentSlice';
 
-export const getAllStudents = (id) => async (dispatch) => {
+export const getAllStudents = () => async (dispatch) => {
     dispatch(getRequest());
 
     try {
         const { data, error } = await supabase
-            .from('students')
-            .select('*, sclassName:sclass_id(*)')
-            .eq('school_id', id);
+            .from('profiles')
+            .select(`
+                *,
+                classes:sclass_id(*)
+            `)
+            .eq('role', 'Student');
 
         if (error) {
             dispatch(getFailed(error.message));
@@ -25,10 +28,10 @@ export const getAllStudents = (id) => async (dispatch) => {
                     _id: student.id,
                     rollNum: student.roll_num,
                     registrationNum: student.registration_num,
-                    sclassName: student.sclassName ? {
-                        ...student.sclassName,
-                        _id: student.sclassName.id,
-                        sclassName: student.sclassName.sclass_name
+                    sclassName: student.classes ? {
+                        ...student.classes,
+                        _id: student.classes.id,
+                        sclassName: student.classes.sclass_name
                     } : null
                 }));
                 dispatch(getSuccess(mappedData));
@@ -41,12 +44,12 @@ export const getAllStudents = (id) => async (dispatch) => {
     }
 }
 
-export const updateStudentFields = (id, fields, address) => async (dispatch) => {
+export const updateStudentFields = (id, fields) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
         const { error } = await supabase
-            .from('students')
+            .from('profiles')
             .update(fields)
             .eq('id', id);
 

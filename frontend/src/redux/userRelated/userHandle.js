@@ -162,14 +162,21 @@ export const logoutUser = () => (dispatch) => {
     dispatch(authLogout());
 };
 
-// Kept for backward compatibility if needed, but simplified
+// Kept for backward compatibility
 export const addStuff = (fields, address) => async (dispatch) => {
     dispatch(authRequest());
     try {
-        const { error } = await supabase.from(address.toLowerCase() + 's').insert([fields]);
+        const tableName = (address === "Sclass" || address === "Class") ? "classes" : address.toLowerCase() + 's';
+        const { error } = await supabase.from(tableName).insert([fields]);
         if (error) throw error;
         dispatch(stuffAdded());
     } catch (error) {
         dispatch(authError(error.message));
     }
+};
+
+// Placeholder to prevent build errors in legacy components
+export const bulkAddStudents = () => async (dispatch) => {
+    console.warn("bulkAddStudents is deprecated in the Unified Auth system.");
+    dispatch(stuffAdded());
 };

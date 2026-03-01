@@ -12,24 +12,27 @@ import {
     getSubDetailsRequest
 } from './sclassSlice';
 
-export const getAllSclasses = (id, address) => async (dispatch) => {
+export const getAllSclasses = () => async (dispatch) => {
     dispatch(getRequest());
 
     try {
         const { data, error } = await supabase
             .from('classes')
-            .select(`
-                *,
-                students(count),
-                subjects(count)
-            `)
-            .eq('school_id', id);
+            .select('*');
 
         if (error) {
             dispatch(getFailedTwo(error.message));
         } else {
             if (data && data.length > 0) {
-                dispatch(getSuccess(data));
+                // Map to legacy fields for compatibility
+                const mappedData = data.map(item => ({
+                    ...item,
+                    _id: item.id,
+                    sclassName: item.sclass_name,
+                    passoutYear: item.passout_year,
+                    batchNumber: item.batch_number
+                }));
+                dispatch(getSuccess(mappedData));
             } else {
                 dispatch(getFailedTwo("No classes found"));
             }
@@ -44,8 +47,9 @@ export const getClassStudents = (id) => async (dispatch) => {
 
     try {
         const { data, error } = await supabase
-            .from('students')
+            .from('profiles')
             .select('*')
+            .eq('role', 'Student')
             .eq('sclass_id', id);
 
         if (error) {
@@ -55,7 +59,8 @@ export const getClassStudents = (id) => async (dispatch) => {
                 const mappedData = data.map(student => ({
                     ...student,
                     _id: student.id,
-                    rollNum: student.roll_num
+                    rollNum: student.roll_num,
+                    registrationNum: student.registration_num
                 }));
                 dispatch(getStudentsSuccess(mappedData));
             } else {
@@ -67,13 +72,13 @@ export const getClassStudents = (id) => async (dispatch) => {
     }
 }
 
-export const getClassDetails = (id, address) => async (dispatch) => {
+export const getClassDetails = (id) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
         const { data, error } = await supabase
             .from('classes')
-            .select('*, school:school_id (*)')
+            .select('*')
             .eq('id', id)
             .single();
 
@@ -95,10 +100,13 @@ export const getSubjectList = (id, address) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
-        const { data, error } = await supabase
-            .from('subjects')
-            .select('*, sclassName:sclass_id(*)')
-            .eq(address === "ClassSubjects" ? 'sclass_id' : 'school_id', id);
+        let query = supabase.from('subjects').select('*, sclassName:sclass_id(*)');
+
+        if (address === "ClassSubjects") {
+            query = query.eq('sclass_id', id);
+        }
+
+        const { data, error } = await query;
 
         if (error) {
             dispatch(getFailed(error.message));
@@ -155,13 +163,13 @@ export const getTeacherFreeClassSubjects = (id) => async (dispatch) => {
     }
 }
 
-export const getSubjectDetails = (id, address) => async (dispatch) => {
+export const getSubjectDetails = (id) => async (dispatch) => {
     dispatch(getSubDetailsRequest());
 
     try {
         const { data, error } = await supabase
             .from('subjects')
-            .select('*, classes:sclass_id (*), school:school_id (*)')
+            .select('*, classes:sclass_id (*)')
             .eq('id', id)
             .single();
 
