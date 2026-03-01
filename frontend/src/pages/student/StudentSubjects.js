@@ -17,145 +17,149 @@ const fadeUp = keyframes`
 `;
 
 const StudentSubjects = () => {
-    const dispatch = useDispatch();
-    const { subjectsList, sclassDetails } = useSelector((state) => state.sclass);
-    const { userDetails, currentUser, loading } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
+  const { subjectsList, sclassDetails } = useSelector((state) => state.sclass);
+  const { userDetails, currentUser, loading } = useSelector((state) => state.user);
 
-    const [subjectMarks, setSubjectMarks] = useState([]);
-    const [selectedSection, setSelectedSection] = useState('table');
+  const [subjectMarks, setSubjectMarks] = useState([]);
+  const [selectedSection, setSelectedSection] = useState('table');
 
-    useEffect(() => {
-        dispatch(getUserDetails(currentUser._id, "Student"));
-    }, [dispatch, currentUser._id]);
-
-    useEffect(() => {
-        if (userDetails) setSubjectMarks(userDetails.examResult || []);
-    }, [userDetails]);
-
-    useEffect(() => {
-        if (!subjectMarks.length) {
-            dispatch(getSubjectList(currentUser.sclassName._id, "ClassSubjects"));
-        }
-    }, [subjectMarks, dispatch, currentUser.sclassName._id]);
-
-    const hasMarks = subjectMarks && subjectMarks.length > 0;
-
-    if (loading) {
-        return (
-            <Wrapper>
-                <LoadingBox>
-                    <CircularProgress sx={{ color: 'var(--clr-primary)' }} size={40} />
-                    <LoadingText>Loading subjects…</LoadingText>
-                </LoadingBox>
-            </Wrapper>
-        );
+  useEffect(() => {
+    if (currentUser?._id) {
+      dispatch(getUserDetails(currentUser._id, "Student"));
     }
+  }, [dispatch, currentUser?._id]);
 
+  useEffect(() => {
+    if (userDetails) setSubjectMarks(userDetails.examResult || []);
+  }, [userDetails]);
+
+  const sclassID = currentUser?.sclassName?._id || currentUser?.sclass_id;
+
+  useEffect(() => {
+    if (!subjectMarks.length && sclassID) {
+      dispatch(getSubjectList(sclassID, "ClassSubjects"));
+    }
+  }, [subjectMarks, dispatch, sclassID]);
+
+  const hasMarks = subjectMarks && subjectMarks.length > 0;
+
+  if (loading) {
     return (
-        <Wrapper>
-            <PageHeader>
-                <HeaderLeft>
-                    <PageTitle>📖 Subjects & Marks</PageTitle>
-                    <PageSub>
-                        Class: <Hl>{sclassDetails?.sclassName || currentUser.sclassName?.sclassName}</Hl>
-                        &nbsp;·&nbsp; Civil Engineering · IGIT Sarang
-                    </PageSub>
-                </HeaderLeft>
-            </PageHeader>
-
-            {hasMarks ? (
-                <>
-                    {/* Tab switcher */}
-                    <TabRow>
-                        <Tab active={selectedSection === 'table'} onClick={() => setSelectedSection('table')}>
-                            <TableChartRoundedIcon sx={{ fontSize: 16 }} />
-                            Marks Table
-                        </Tab>
-                        <Tab active={selectedSection === 'chart'} onClick={() => setSelectedSection('chart')}>
-                            <InsertChartRoundedIcon sx={{ fontSize: 16 }} />
-                            Bar Chart
-                        </Tab>
-                    </TabRow>
-
-                    {selectedSection === 'table' && (
-                        <TableCard>
-                            <Table>
-                                <TableHead>
-                                    <StyledTableRow>
-                                        <StyledTableCell>#</StyledTableCell>
-                                        <StyledTableCell>Subject</StyledTableCell>
-                                        <StyledTableCell>Marks Obtained</StyledTableCell>
-                                        <StyledTableCell>Status</StyledTableCell>
-                                    </StyledTableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {subjectMarks.map((result, index) => {
-                                        if (!result.subName || !result.marksObtained) return null;
-                                        const marks = result.marksObtained;
-                                        const passed = marks >= 40;
-                                        return (
-                                            <StyledTableRow key={index}>
-                                                <StyledTableCell>{index + 1}</StyledTableCell>
-                                                <StyledTableCell sx={{ fontWeight: 600 }}>
-                                                    {result.subName.subName}
-                                                </StyledTableCell>
-                                                <StyledTableCell>
-                                                    <MarksDisplay marks={marks}>
-                                                        {marks}
-                                                    </MarksDisplay>
-                                                </StyledTableCell>
-                                                <StyledTableCell>
-                                                    <StatusBadge pass={passed}>
-                                                        {passed ? 'Pass' : 'Fail'}
-                                                    </StatusBadge>
-                                                </StyledTableCell>
-                                            </StyledTableRow>
-                                        );
-                                    })}
-                                </TableBody>
-                            </Table>
-                        </TableCard>
-                    )}
-
-                    {selectedSection === 'chart' && (
-                        <ChartCard>
-                            <CustomBarChart chartData={subjectMarks} dataKey="marksObtained" />
-                        </ChartCard>
-                    )}
-                </>
-            ) : (
-                <>
-                    {/* Class details / subject list */}
-                    <SectionTitle>
-                        <MenuBookRoundedIcon sx={{ fontSize: 18, verticalAlign: 'middle', mr: 1 }} />
-                        Enrolled Subjects
-                    </SectionTitle>
-                    <SubjectGrid>
-                        {subjectsList && subjectsList.map((subject, index) => (
-                            <SubjectCard key={index} style={{ animationDelay: `${index * 60}ms` }}>
-                                <SubjectIndex>{String(index + 1).padStart(2, '0')}</SubjectIndex>
-                                <SubjectInfo>
-                                    <SubjectName>{subject.subName}</SubjectName>
-                                    <SubjectCode>
-                                        <CodeRoundedIcon sx={{ fontSize: 12 }} />
-                                        {subject.subCode}
-                                    </SubjectCode>
-                                </SubjectInfo>
-                            </SubjectCard>
-                        ))}
-                    </SubjectGrid>
-
-                    {(!subjectsList || subjectsList.length === 0) && (
-                        <EmptyState>
-                            <EmptyIcon>📚</EmptyIcon>
-                            <EmptyText>No subjects found for your class</EmptyText>
-                            <EmptySubText>Subjects will appear once your admin adds them</EmptySubText>
-                        </EmptyState>
-                    )}
-                </>
-            )}
-        </Wrapper>
+      <Wrapper>
+        <LoadingBox>
+          <CircularProgress sx={{ color: 'var(--clr-primary)' }} size={40} />
+          <LoadingText>Loading subjects…</LoadingText>
+        </LoadingBox>
+      </Wrapper>
     );
+  }
+
+  return (
+    <Wrapper>
+      <PageHeader>
+        <HeaderLeft>
+          <PageTitle>📖 Subjects & Marks</PageTitle>
+          <PageSub>
+            Class: <Hl>{sclassDetails?.sclassName || currentUser.sclassName?.sclassName}</Hl>
+            &nbsp;·&nbsp; Civil Engineering · IGIT Sarang
+          </PageSub>
+        </HeaderLeft>
+      </PageHeader>
+
+      {hasMarks ? (
+        <>
+          {/* Tab switcher */}
+          <TabRow>
+            <Tab active={selectedSection === 'table'} onClick={() => setSelectedSection('table')}>
+              <TableChartRoundedIcon sx={{ fontSize: 16 }} />
+              Marks Table
+            </Tab>
+            <Tab active={selectedSection === 'chart'} onClick={() => setSelectedSection('chart')}>
+              <InsertChartRoundedIcon sx={{ fontSize: 16 }} />
+              Bar Chart
+            </Tab>
+          </TabRow>
+
+          {selectedSection === 'table' && (
+            <TableCard>
+              <Table>
+                <TableHead>
+                  <StyledTableRow>
+                    <StyledTableCell>#</StyledTableCell>
+                    <StyledTableCell>Subject</StyledTableCell>
+                    <StyledTableCell>Marks Obtained</StyledTableCell>
+                    <StyledTableCell>Status</StyledTableCell>
+                  </StyledTableRow>
+                </TableHead>
+                <TableBody>
+                  {subjectMarks.map((result, index) => {
+                    if (!result.subName || !result.marksObtained) return null;
+                    const marks = result.marksObtained;
+                    const passed = marks >= 40;
+                    return (
+                      <StyledTableRow key={index}>
+                        <StyledTableCell>{index + 1}</StyledTableCell>
+                        <StyledTableCell sx={{ fontWeight: 600 }}>
+                          {result.subName.subName}
+                        </StyledTableCell>
+                        <StyledTableCell>
+                          <MarksDisplay marks={marks}>
+                            {marks}
+                          </MarksDisplay>
+                        </StyledTableCell>
+                        <StyledTableCell>
+                          <StatusBadge pass={passed}>
+                            {passed ? 'Pass' : 'Fail'}
+                          </StatusBadge>
+                        </StyledTableCell>
+                      </StyledTableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableCard>
+          )}
+
+          {selectedSection === 'chart' && (
+            <ChartCard>
+              <CustomBarChart chartData={subjectMarks} dataKey="marksObtained" />
+            </ChartCard>
+          )}
+        </>
+      ) : (
+        <>
+          {/* Class details / subject list */}
+          <SectionTitle>
+            <MenuBookRoundedIcon sx={{ fontSize: 18, verticalAlign: 'middle', mr: 1 }} />
+            Enrolled Subjects
+          </SectionTitle>
+          <SubjectGrid>
+            {subjectsList && subjectsList.map((subject, index) => (
+              <SubjectCard key={index} style={{ animationDelay: `${index * 60}ms` }}>
+                <SubjectIndex>{String(index + 1).padStart(2, '0')}</SubjectIndex>
+                <SubjectInfo>
+                  <SubjectName>{subject.subName}</SubjectName>
+                  <SubjectCode>
+                    <CodeRoundedIcon sx={{ fontSize: 12 }} />
+                    {subject.subCode}
+                  </SubjectCode>
+                </SubjectInfo>
+              </SubjectCard>
+            ))}
+          </SubjectGrid>
+
+          {(!subjectsList || subjectsList.length === 0) && (
+            <EmptyState>
+              <EmptyIcon>📚</EmptyIcon>
+              <EmptyText>No subjects found for your class</EmptyText>
+              <EmptySubText>Subjects will appear once your admin adds them</EmptySubText>
+            </EmptyState>
+          )}
+        </>
+      )}
+    </Wrapper>
+  );
 };
 
 export default StudentSubjects;

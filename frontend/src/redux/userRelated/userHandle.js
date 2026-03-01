@@ -54,7 +54,7 @@ export const loginUser = (fields, role) => async (dispatch) => {
         const { data, error } = await supabase
             .from(table)
             .select(selectQuery)
-            .eq(role === 'Student' ? 'roll_num' : 'email', fields.rollNum || fields.email)
+            .eq(role === 'Student' ? 'roll_num' : 'email', role === 'Student' ? Number(fields.rollNum) : fields.email)
             .eq('password', fields.password)
             .single();
 

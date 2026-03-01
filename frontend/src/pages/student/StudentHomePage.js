@@ -22,12 +22,18 @@ const StudentHomePage = () => {
   const { subjectsList } = useSelector((state) => state.sclass);
   const [subjectAttendance, setSubjectAttendance] = useState([]);
 
-  const classID = currentUser.sclassName._id;
+  if (!currentUser) return null;
+
+  const classID = currentUser?.sclassName?._id || currentUser?.sclass_id || null;
 
   useEffect(() => {
-    dispatch(getUserDetails(currentUser._id, "Student"));
-    dispatch(getSubjectList(classID, "ClassSubjects"));
-  }, [dispatch, currentUser._id, classID]);
+    if (currentUser?._id) {
+      dispatch(getUserDetails(currentUser._id, "Student"));
+    }
+    if (classID) {
+      dispatch(getSubjectList(classID, "ClassSubjects"));
+    }
+  }, [dispatch, currentUser, classID]);
 
   useEffect(() => {
     if (userDetails) {

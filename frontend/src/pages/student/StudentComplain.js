@@ -15,131 +15,133 @@ const fadeUp = keyframes`
 `;
 
 const StudentComplain = () => {
-    const [complaint, setComplaint] = useState("");
-    const [date, setDate] = useState("");
-    const dispatch = useDispatch();
-    const { status, currentUser, error } = useSelector(state => state.user);
+  const [complaint, setComplaint] = useState("");
+  const [date, setDate] = useState("");
+  const dispatch = useDispatch();
+  const { status, currentUser, error } = useSelector(state => state.user);
 
-    const user = currentUser._id;
-    const school = currentUser.school._id;
-    const address = "Complain";
+  if (!currentUser) return null;
 
-    const [loader, setLoader] = useState(false);
-    const [message, setMessage] = useState("");
-    const [showPopup, setShowPopup] = useState(false);
-    const [submitted, setSubmitted] = useState(false);
+  const user = currentUser._id;
+  const school = currentUser.school?._id || currentUser.school_id;
+  const address = "Complain";
 
-    const submitHandler = (event) => {
-        event.preventDefault();
-        setLoader(true);
-        dispatch(addStuff({ user, date, complaint, school }, address));
-    };
+  const [loader, setLoader] = useState(false);
+  const [message, setMessage] = useState("");
+  const [showPopup, setShowPopup] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-    useEffect(() => {
-        if (status === "added") {
-            setLoader(false);
-            setSubmitted(true);
-            setMessage("Complaint submitted successfully!");
-            setShowPopup(true);
-            setComplaint("");
-            setDate("");
-        } else if (error) {
-            setLoader(false);
-            setMessage("Network Error — please try again.");
-            setShowPopup(true);
-        }
-    }, [status, error]);
+  const submitHandler = (event) => {
+    event.preventDefault();
+    setLoader(true);
+    dispatch(addStuff({ user, date, complaint, school }, address));
+  };
 
-    return (
-        <Wrapper>
-            <FormSection>
-                {/* Header */}
-                <FormHeader>
-                    <IconCircle>
-                        <CampaignRoundedIcon sx={{ fontSize: 28, color: '#fff' }} />
-                    </IconCircle>
-                    <HeaderText>
-                        <FormTitle>Submit a Complaint</FormTitle>
-                        <FormSub>Civil Engineering Department · IGIT Sarang</FormSub>
-                    </HeaderText>
-                </FormHeader>
+  useEffect(() => {
+    if (status === "added") {
+      setLoader(false);
+      setSubmitted(true);
+      setMessage("Complaint submitted successfully!");
+      setShowPopup(true);
+      setComplaint("");
+      setDate("");
+    } else if (error) {
+      setLoader(false);
+      setMessage("Network Error — please try again.");
+      setShowPopup(true);
+    }
+  }, [status, error]);
 
-                <Divider />
+  return (
+    <Wrapper>
+      <FormSection>
+        {/* Header */}
+        <FormHeader>
+          <IconCircle>
+            <CampaignRoundedIcon sx={{ fontSize: 28, color: '#fff' }} />
+          </IconCircle>
+          <HeaderText>
+            <FormTitle>Submit a Complaint</FormTitle>
+            <FormSub>Civil Engineering Department · IGIT Sarang</FormSub>
+          </HeaderText>
+        </FormHeader>
 
-                {/* Info Banner */}
-                <InfoBanner>
-                    <span>ℹ️</span>
-                    <span>
-                        Your complaint will be reviewed by the department admin. Please be clear and specific.
-                    </span>
-                </InfoBanner>
+        <Divider />
 
-                {/* Form */}
-                <form onSubmit={submitHandler}>
-                    <FieldGroup>
-                        <FieldLabel>
-                            <CalendarTodayRoundedIcon sx={{ fontSize: 15 }} />
-                            Date
-                        </FieldLabel>
-                        <StyledInput
-                            type="date"
-                            value={date}
-                            onChange={e => setDate(e.target.value)}
-                            required
-                        />
-                    </FieldGroup>
+        {/* Info Banner */}
+        <InfoBanner>
+          <span>ℹ️</span>
+          <span>
+            Your complaint will be reviewed by the department admin. Please be clear and specific.
+          </span>
+        </InfoBanner>
 
-                    <FieldGroup>
-                        <FieldLabel>
-                            <EditNoteRoundedIcon sx={{ fontSize: 15 }} />
-                            Complaint Details
-                        </FieldLabel>
-                        <StyledTextarea
-                            placeholder="Describe your complaint clearly and in detail…"
-                            value={complaint}
-                            onChange={e => setComplaint(e.target.value)}
-                            required
-                            rows={6}
-                        />
-                        <CharCount>{complaint.length} characters</CharCount>
-                    </FieldGroup>
+        {/* Form */}
+        <form onSubmit={submitHandler}>
+          <FieldGroup>
+            <FieldLabel>
+              <CalendarTodayRoundedIcon sx={{ fontSize: 15 }} />
+              Date
+            </FieldLabel>
+            <StyledInput
+              type="date"
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              required
+            />
+          </FieldGroup>
 
-                    <SubmitBtn type="submit" disabled={loader || !date || !complaint.trim()}>
-                        {loader
-                            ? <CircularProgress size={20} sx={{ color: '#fff' }} />
-                            : <><SendRoundedIcon sx={{ fontSize: 18 }} /> Submit Complaint</>
-                        }
-                    </SubmitBtn>
-                </form>
+          <FieldGroup>
+            <FieldLabel>
+              <EditNoteRoundedIcon sx={{ fontSize: 15 }} />
+              Complaint Details
+            </FieldLabel>
+            <StyledTextarea
+              placeholder="Describe your complaint clearly and in detail…"
+              value={complaint}
+              onChange={e => setComplaint(e.target.value)}
+              required
+              rows={6}
+            />
+            <CharCount>{complaint.length} characters</CharCount>
+          </FieldGroup>
 
-                {/* Previous submissions hint */}
-                <FootNote>
-                    All complaints are confidential and handled within 5–7 working days.
-                </FootNote>
-            </FormSection>
+          <SubmitBtn type="submit" disabled={loader || !date || !complaint.trim()}>
+            {loader
+              ? <CircularProgress size={20} sx={{ color: '#fff' }} />
+              : <><SendRoundedIcon sx={{ fontSize: 18 }} /> Submit Complaint</>
+            }
+          </SubmitBtn>
+        </form>
 
-            {/* Side Info */}
-            <SidePanel>
-                <SidePanelTitle>📋 Guidelines</SidePanelTitle>
-                {[
-                    { icon: '🎯', title: 'Be specific', text: 'Describe the issue in detail with dates and context.' },
-                    { icon: '🤝', title: 'Be respectful', text: 'Use appropriate language in your complaint.' },
-                    { icon: '📁', title: 'One issue', text: 'Submit one complaint per form for clarity.' },
-                    { icon: '⏰', title: 'Response time', text: 'Expect a response within 5–7 working days.' },
-                ].map((item, i) => (
-                    <GuideCard key={i}>
-                        <GuideIcon>{item.icon}</GuideIcon>
-                        <GuideText>
-                            <GuideTitle>{item.title}</GuideTitle>
-                            <GuideDesc>{item.text}</GuideDesc>
-                        </GuideText>
-                    </GuideCard>
-                ))}
-            </SidePanel>
+        {/* Previous submissions hint */}
+        <FootNote>
+          All complaints are confidential and handled within 5–7 working days.
+        </FootNote>
+      </FormSection>
 
-            <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
-        </Wrapper>
-    );
+      {/* Side Info */}
+      <SidePanel>
+        <SidePanelTitle>📋 Guidelines</SidePanelTitle>
+        {[
+          { icon: '🎯', title: 'Be specific', text: 'Describe the issue in detail with dates and context.' },
+          { icon: '🤝', title: 'Be respectful', text: 'Use appropriate language in your complaint.' },
+          { icon: '📁', title: 'One issue', text: 'Submit one complaint per form for clarity.' },
+          { icon: '⏰', title: 'Response time', text: 'Expect a response within 5–7 working days.' },
+        ].map((item, i) => (
+          <GuideCard key={i}>
+            <GuideIcon>{item.icon}</GuideIcon>
+            <GuideText>
+              <GuideTitle>{item.title}</GuideTitle>
+              <GuideDesc>{item.text}</GuideDesc>
+            </GuideText>
+          </GuideCard>
+        ))}
+      </SidePanel>
+
+      <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
+    </Wrapper>
+  );
 };
 
 export default StudentComplain;

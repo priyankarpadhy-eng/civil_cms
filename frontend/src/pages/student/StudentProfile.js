@@ -20,8 +20,11 @@ import FaceScanModal from '../../components/FaceScanModal';
 const StudentProfile = () => {
   const { currentUser } = useSelector((state) => state.user);
   const dispatch = useDispatch();
-  const sclassName = currentUser.sclassName;
-  const studentSchool = currentUser.school;
+
+  if (!currentUser) return null;
+
+  const sclassName = currentUser?.sclassName;
+  const studentSchool = currentUser?.school;
 
   const [scanModalOpen, setScanModalOpen] = React.useState(false);
 

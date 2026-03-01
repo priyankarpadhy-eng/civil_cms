@@ -5,9 +5,9 @@ import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { getUserDetails } from '../../redux/userRelated/userHandle';
 import {
-    calculateOverallAttendancePercentage,
-    calculateSubjectAttendancePercentage,
-    groupAttendanceBySubject,
+  calculateOverallAttendancePercentage,
+  calculateSubjectAttendancePercentage,
+  groupAttendanceBySubject,
 } from '../../components/attendanceCalculator';
 import CustomBarChart from '../../components/CustomBarChart';
 import { StyledTableCell, StyledTableRow } from '../../components/styles';
@@ -23,205 +23,207 @@ const fadeUp = keyframes`
 `;
 
 const ViewStdAttendance = () => {
-    const dispatch = useDispatch();
-    const [openStates, setOpenStates] = useState({});
-    const [selectedSection, setSelectedSection] = useState('table');
-    const [subjectAttendance, setSubjectAttendance] = useState([]);
+  const dispatch = useDispatch();
+  const [openStates, setOpenStates] = useState({});
+  const [selectedSection, setSelectedSection] = useState('table');
+  const [subjectAttendance, setSubjectAttendance] = useState([]);
 
-    const { userDetails, currentUser, loading } = useSelector((state) => state.user);
+  const { userDetails, currentUser, loading } = useSelector((state) => state.user);
 
-    useEffect(() => {
-        dispatch(getUserDetails(currentUser._id, "Student"));
-    }, [dispatch, currentUser._id]);
-
-    useEffect(() => {
-        if (userDetails) setSubjectAttendance(userDetails.attendance || []);
-    }, [userDetails]);
-
-    const handleOpen = (subId) => {
-        setOpenStates(prev => ({ ...prev, [subId]: !prev[subId] }));
-    };
-
-    const attendanceBySubject = groupAttendanceBySubject(subjectAttendance);
-    const overallAttendancePercentage = calculateOverallAttendancePercentage(subjectAttendance);
-    const overallOk = overallAttendancePercentage >= 75;
-
-    const subjectData = Object.entries(attendanceBySubject).map(([subName, { subCode, present, sessions }]) => ({
-        subject: subName,
-        attendancePercentage: calculateSubjectAttendancePercentage(present, sessions),
-        totalClasses: sessions,
-        attendedClasses: present,
-    }));
-
-    const hasAttendance = subjectAttendance && subjectAttendance.length > 0;
-
-    if (loading) {
-        return (
-            <Wrapper>
-                <LoadingBox>
-                    <CircularProgress sx={{ color: 'var(--clr-primary)' }} size={40} />
-                    <LoadingText>Loading attendance data…</LoadingText>
-                </LoadingBox>
-            </Wrapper>
-        );
+  useEffect(() => {
+    if (currentUser?._id) {
+      dispatch(getUserDetails(currentUser._id, "Student"));
     }
+  }, [dispatch, currentUser?._id]);
 
-    if (!hasAttendance) {
-        return (
-            <Wrapper>
-                <PageHeader>
-                    <PageTitle>📅 Attendance</PageTitle>
-                    <PageSub>Civil Engineering · IGIT Sarang</PageSub>
-                </PageHeader>
-                <EmptyCard>
-                    <EmptyIcon>📋</EmptyIcon>
-                    <EmptyTitle>No Attendance Records</EmptyTitle>
-                    <EmptyDesc>Your attendance will appear here once your teachers start marking it.</EmptyDesc>
-                </EmptyCard>
-            </Wrapper>
-        );
-    }
+  useEffect(() => {
+    if (userDetails) setSubjectAttendance(userDetails.attendance || []);
+  }, [userDetails]);
 
+  const handleOpen = (subId) => {
+    setOpenStates(prev => ({ ...prev, [subId]: !prev[subId] }));
+  };
+
+  const attendanceBySubject = groupAttendanceBySubject(subjectAttendance);
+  const overallAttendancePercentage = calculateOverallAttendancePercentage(subjectAttendance);
+  const overallOk = overallAttendancePercentage >= 75;
+
+  const subjectData = Object.entries(attendanceBySubject).map(([subName, { subCode, present, sessions }]) => ({
+    subject: subName,
+    attendancePercentage: calculateSubjectAttendancePercentage(present, sessions),
+    totalClasses: sessions,
+    attendedClasses: present,
+  }));
+
+  const hasAttendance = subjectAttendance && subjectAttendance.length > 0;
+
+  if (loading) {
     return (
-        <Wrapper>
-            {/* Page Header */}
-            <PageHeader>
-                <HeaderLeft>
-                    <PageTitle>📅 Attendance</PageTitle>
-                    <PageSub>Civil Engineering · IGIT Sarang · {currentUser?.sclassName?.sclassName}</PageSub>
-                </HeaderLeft>
-                {/* Overall badge */}
-                <OverallBadge ok={overallOk}>
-                    <OverallIcon ok={overallOk}>
-                        <CheckBoxRoundedIcon sx={{ fontSize: 20 }} />
-                    </OverallIcon>
-                    <OverallInfo>
-                        <OverallLabel>Overall Attendance</OverallLabel>
-                        <OverallValue ok={overallOk}>{overallAttendancePercentage.toFixed(1)}%</OverallValue>
-                    </OverallInfo>
-                    {overallOk
-                        ? <TrendingUpRoundedIcon sx={{ fontSize: 18, color: 'var(--clr-success)', ml: 1 }} />
-                        : <TrendingDownRoundedIcon sx={{ fontSize: 18, color: 'var(--clr-error)', ml: 1 }} />
-                    }
-                </OverallBadge>
-            </PageHeader>
-
-            {/* Progress bar for each subject (summary) */}
-            <ProgressGrid>
-                {subjectData.map((s, i) => {
-                    const pct = s.attendancePercentage;
-                    const ok = pct >= 75;
-                    return (
-                        <ProgressCard key={i} style={{ animationDelay: `${i * 60}ms` }}>
-                            <ProgressTop>
-                                <ProgressSubject>{s.subject}</ProgressSubject>
-                                <ProgressPct ok={ok}>{pct}%</ProgressPct>
-                            </ProgressTop>
-                            <ProgressBar>
-                                <ProgressFill pct={pct} ok={ok} />
-                            </ProgressBar>
-                            <ProgressMeta>
-                                {s.attendedClasses} / {s.totalClasses} classes
-                            </ProgressMeta>
-                        </ProgressCard>
-                    );
-                })}
-            </ProgressGrid>
-
-            {/* Tab switcher */}
-            <TabRow>
-                <Tab active={selectedSection === 'table'} onClick={() => setSelectedSection('table')}>
-                    <TableChartRoundedIcon sx={{ fontSize: 16 }} /> Detailed Table
-                </Tab>
-                <Tab active={selectedSection === 'chart'} onClick={() => setSelectedSection('chart')}>
-                    <InsertChartRoundedIcon sx={{ fontSize: 16 }} /> Chart View
-                </Tab>
-            </TabRow>
-
-            {/* Table Section */}
-            {selectedSection === 'table' && (
-                <TableCard>
-                    <Table>
-                        <TableHead>
-                            <StyledTableRow>
-                                <StyledTableCell>Subject</StyledTableCell>
-                                <StyledTableCell>Present</StyledTableCell>
-                                <StyledTableCell>Total</StyledTableCell>
-                                <StyledTableCell>Percentage</StyledTableCell>
-                                <StyledTableCell align="center">Details</StyledTableCell>
-                            </StyledTableRow>
-                        </TableHead>
-                        {Object.entries(attendanceBySubject).map(([subName, { present, allData, subId, sessions }], index) => {
-                            const pct = calculateSubjectAttendancePercentage(present, sessions);
-                            const ok = pct >= 75;
-                            return (
-                                <TableBody key={index}>
-                                    <StyledTableRow>
-                                        <StyledTableCell sx={{ fontWeight: 600 }}>{subName}</StyledTableCell>
-                                        <StyledTableCell>{present}</StyledTableCell>
-                                        <StyledTableCell>{sessions}</StyledTableCell>
-                                        <StyledTableCell>
-                                            <PctChip ok={ok}>{pct}%</PctChip>
-                                        </StyledTableCell>
-                                        <StyledTableCell align="center">
-                                            <ExpandBtn onClick={() => handleOpen(subId)}>
-                                                {openStates[subId]
-                                                    ? <><KeyboardArrowUp sx={{ fontSize: 16 }} /> Hide</>
-                                                    : <><KeyboardArrowDown sx={{ fontSize: 16 }} /> View</>
-                                                }
-                                            </ExpandBtn>
-                                        </StyledTableCell>
-                                    </StyledTableRow>
-                                    <StyledTableRow>
-                                        <StyledTableCell colSpan={5} sx={{ p: 0, border: 'none' }}>
-                                            <Collapse in={openStates[subId]} timeout="auto" unmountOnExit>
-                                                <DetailBox>
-                                                    <DetailTitle>Session-wise Attendance</DetailTitle>
-                                                    <Table size="small">
-                                                        <TableHead>
-                                                            <StyledTableRow>
-                                                                <StyledTableCell>Date</StyledTableCell>
-                                                                <StyledTableCell align="right">Status</StyledTableCell>
-                                                            </StyledTableRow>
-                                                        </TableHead>
-                                                        <TableBody>
-                                                            {allData.map((data, i) => {
-                                                                const date = new Date(data.date);
-                                                                const dateStr = date.toString() !== "Invalid Date"
-                                                                    ? date.toISOString().substring(0, 10) : "—";
-                                                                const isPresent = data.status === 'Present';
-                                                                return (
-                                                                    <StyledTableRow key={i}>
-                                                                        <StyledTableCell>{dateStr}</StyledTableCell>
-                                                                        <StyledTableCell align="right">
-                                                                            <StatusDot present={isPresent}>
-                                                                                {isPresent ? '✓ Present' : '✕ Absent'}
-                                                                            </StatusDot>
-                                                                        </StyledTableCell>
-                                                                    </StyledTableRow>
-                                                                );
-                                                            })}
-                                                        </TableBody>
-                                                    </Table>
-                                                </DetailBox>
-                                            </Collapse>
-                                        </StyledTableCell>
-                                    </StyledTableRow>
-                                </TableBody>
-                            );
-                        })}
-                    </Table>
-                </TableCard>
-            )}
-
-            {/* Chart Section */}
-            {selectedSection === 'chart' && (
-                <ChartCard>
-                    <CustomBarChart chartData={subjectData} dataKey="attendancePercentage" />
-                </ChartCard>
-            )}
-        </Wrapper>
+      <Wrapper>
+        <LoadingBox>
+          <CircularProgress sx={{ color: 'var(--clr-primary)' }} size={40} />
+          <LoadingText>Loading attendance data…</LoadingText>
+        </LoadingBox>
+      </Wrapper>
     );
+  }
+
+  if (!hasAttendance) {
+    return (
+      <Wrapper>
+        <PageHeader>
+          <PageTitle>📅 Attendance</PageTitle>
+          <PageSub>Civil Engineering · IGIT Sarang</PageSub>
+        </PageHeader>
+        <EmptyCard>
+          <EmptyIcon>📋</EmptyIcon>
+          <EmptyTitle>No Attendance Records</EmptyTitle>
+          <EmptyDesc>Your attendance will appear here once your teachers start marking it.</EmptyDesc>
+        </EmptyCard>
+      </Wrapper>
+    );
+  }
+
+  return (
+    <Wrapper>
+      {/* Page Header */}
+      <PageHeader>
+        <HeaderLeft>
+          <PageTitle>📅 Attendance</PageTitle>
+          <PageSub>Civil Engineering · IGIT Sarang · {currentUser?.sclassName?.sclassName}</PageSub>
+        </HeaderLeft>
+        {/* Overall badge */}
+        <OverallBadge ok={overallOk}>
+          <OverallIcon ok={overallOk}>
+            <CheckBoxRoundedIcon sx={{ fontSize: 20 }} />
+          </OverallIcon>
+          <OverallInfo>
+            <OverallLabel>Overall Attendance</OverallLabel>
+            <OverallValue ok={overallOk}>{overallAttendancePercentage.toFixed(1)}%</OverallValue>
+          </OverallInfo>
+          {overallOk
+            ? <TrendingUpRoundedIcon sx={{ fontSize: 18, color: 'var(--clr-success)', ml: 1 }} />
+            : <TrendingDownRoundedIcon sx={{ fontSize: 18, color: 'var(--clr-error)', ml: 1 }} />
+          }
+        </OverallBadge>
+      </PageHeader>
+
+      {/* Progress bar for each subject (summary) */}
+      <ProgressGrid>
+        {subjectData.map((s, i) => {
+          const pct = s.attendancePercentage;
+          const ok = pct >= 75;
+          return (
+            <ProgressCard key={i} style={{ animationDelay: `${i * 60}ms` }}>
+              <ProgressTop>
+                <ProgressSubject>{s.subject}</ProgressSubject>
+                <ProgressPct ok={ok}>{pct}%</ProgressPct>
+              </ProgressTop>
+              <ProgressBar>
+                <ProgressFill pct={pct} ok={ok} />
+              </ProgressBar>
+              <ProgressMeta>
+                {s.attendedClasses} / {s.totalClasses} classes
+              </ProgressMeta>
+            </ProgressCard>
+          );
+        })}
+      </ProgressGrid>
+
+      {/* Tab switcher */}
+      <TabRow>
+        <Tab active={selectedSection === 'table'} onClick={() => setSelectedSection('table')}>
+          <TableChartRoundedIcon sx={{ fontSize: 16 }} /> Detailed Table
+        </Tab>
+        <Tab active={selectedSection === 'chart'} onClick={() => setSelectedSection('chart')}>
+          <InsertChartRoundedIcon sx={{ fontSize: 16 }} /> Chart View
+        </Tab>
+      </TabRow>
+
+      {/* Table Section */}
+      {selectedSection === 'table' && (
+        <TableCard>
+          <Table>
+            <TableHead>
+              <StyledTableRow>
+                <StyledTableCell>Subject</StyledTableCell>
+                <StyledTableCell>Present</StyledTableCell>
+                <StyledTableCell>Total</StyledTableCell>
+                <StyledTableCell>Percentage</StyledTableCell>
+                <StyledTableCell align="center">Details</StyledTableCell>
+              </StyledTableRow>
+            </TableHead>
+            {Object.entries(attendanceBySubject).map(([subName, { present, allData, subId, sessions }], index) => {
+              const pct = calculateSubjectAttendancePercentage(present, sessions);
+              const ok = pct >= 75;
+              return (
+                <TableBody key={index}>
+                  <StyledTableRow>
+                    <StyledTableCell sx={{ fontWeight: 600 }}>{subName}</StyledTableCell>
+                    <StyledTableCell>{present}</StyledTableCell>
+                    <StyledTableCell>{sessions}</StyledTableCell>
+                    <StyledTableCell>
+                      <PctChip ok={ok}>{pct}%</PctChip>
+                    </StyledTableCell>
+                    <StyledTableCell align="center">
+                      <ExpandBtn onClick={() => handleOpen(subId)}>
+                        {openStates[subId]
+                          ? <><KeyboardArrowUp sx={{ fontSize: 16 }} /> Hide</>
+                          : <><KeyboardArrowDown sx={{ fontSize: 16 }} /> View</>
+                        }
+                      </ExpandBtn>
+                    </StyledTableCell>
+                  </StyledTableRow>
+                  <StyledTableRow>
+                    <StyledTableCell colSpan={5} sx={{ p: 0, border: 'none' }}>
+                      <Collapse in={openStates[subId]} timeout="auto" unmountOnExit>
+                        <DetailBox>
+                          <DetailTitle>Session-wise Attendance</DetailTitle>
+                          <Table size="small">
+                            <TableHead>
+                              <StyledTableRow>
+                                <StyledTableCell>Date</StyledTableCell>
+                                <StyledTableCell align="right">Status</StyledTableCell>
+                              </StyledTableRow>
+                            </TableHead>
+                            <TableBody>
+                              {allData.map((data, i) => {
+                                const date = new Date(data.date);
+                                const dateStr = date.toString() !== "Invalid Date"
+                                  ? date.toISOString().substring(0, 10) : "—";
+                                const isPresent = data.status === 'Present';
+                                return (
+                                  <StyledTableRow key={i}>
+                                    <StyledTableCell>{dateStr}</StyledTableCell>
+                                    <StyledTableCell align="right">
+                                      <StatusDot present={isPresent}>
+                                        {isPresent ? '✓ Present' : '✕ Absent'}
+                                      </StatusDot>
+                                    </StyledTableCell>
+                                  </StyledTableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </DetailBox>
+                      </Collapse>
+                    </StyledTableCell>
+                  </StyledTableRow>
+                </TableBody>
+              );
+            })}
+          </Table>
+        </TableCard>
+      )}
+
+      {/* Chart Section */}
+      {selectedSection === 'chart' && (
+        <ChartCard>
+          <CustomBarChart chartData={subjectData} dataKey="attendancePercentage" />
+        </ChartCard>
+      )}
+    </Wrapper>
+  );
 };
 
 export default ViewStdAttendance;
