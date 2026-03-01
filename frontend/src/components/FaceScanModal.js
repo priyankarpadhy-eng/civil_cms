@@ -301,7 +301,6 @@ const FaceScanModal = ({ open, onClose, onCapture }) => {
                                     top: 0, left: 0,
                                     width: '100%', height: '100%',
                                     objectFit: 'cover',
-                                    transform: 'scaleX(-1)' // Match mirrored
                                 }}
                             />
                             {/* Canvas for Glow Mesh and Scan Line */}
