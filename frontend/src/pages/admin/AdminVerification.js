@@ -46,16 +46,19 @@ const AdminVerification = () => {
 
     const handleVerify = async (id, status) => {
         setActionLoading(true);
-        const { error } = await supabase
+        const { data, error } = await supabase
             .from('profiles')
             .update({ verification_status: status })
-            .eq('id', id);
+            .eq('id', id)
+            .select();
 
-        if (!error) {
+        if (error) {
+            alert("Error updating status: " + error.message);
+        } else if (!data || data.length === 0) {
+            alert("Action Prevented by Database! Your Admin account does not have Row Level Security (RLS) permission to edit other user profiles. Please run the provided SQL policy.");
+        } else {
             setRequests(requests.filter(req => req.id !== id));
             setSelectedStudent(null);
-        } else {
-            alert("Error updating status: " + error.message);
         }
         setActionLoading(false);
     };
