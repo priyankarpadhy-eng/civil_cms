@@ -182,6 +182,45 @@ export const bulkAddStudents = () => async (dispatch) => {
     dispatch(stuffAdded());
 };
 
+// Public: Get Student by Slug (roll_num or ID)
+export const getStudentBySlug = (slug) => async (dispatch) => {
+    dispatch(getRequest());
+
+    try {
+        // Try searching by ID first (if it's a UUID)
+        let query = supabase.from('profiles').select('*, sclassName:sclass_id(*)');
+
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
+
+        if (isUUID) {
+            query = query.eq('id', slug);
+        } else {
+            query = query.eq('roll_num', slug);
+        }
+
+        const { data, error } = await query.single();
+
+        if (error) {
+            dispatch(getError(error.message));
+        } else {
+            // Map legacy fields
+            const mappedData = {
+                ...data,
+                _id: data.id,
+                rollNum: data.roll_num,
+                sclassName: data.sclassName ? {
+                    ...data.sclassName,
+                    _id: data.sclassName.id,
+                    sclassName: data.sclassName.sclass_name
+                } : null
+            };
+            dispatch(doneSuccess(mappedData));
+        }
+    } catch (error) {
+        dispatch(getError(error.message));
+    }
+};
+
 // Unified delete handler (Legacy name deleteUser used for all entities)
 export const deleteUser = (id, address) => async (dispatch) => {
     dispatch(getRequest());
