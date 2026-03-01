@@ -37,7 +37,7 @@ const ShowClasses = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const [message, setMessage] = useState("");
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmStep, setConfirmStep] = useState(0); // 0=closed, 1=warning, 2=final
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [pendingDeleteName, setPendingDeleteName] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -49,7 +49,14 @@ const ShowClasses = () => {
   const deleteHandler = (deleteID, batchName) => {
     setPendingDeleteId(deleteID);
     setPendingDeleteName(batchName || "this batch");
-    setConfirmOpen(true);
+    setConfirmStep(1);
+  };
+
+  const cancelDelete = () => {
+    if (!deleting) {
+      setConfirmStep(0);
+      setPendingDeleteId(null);
+    }
   };
 
   const confirmDelete = async () => {
@@ -83,7 +90,7 @@ const ShowClasses = () => {
       setShowPopup(true);
     } finally {
       setDeleting(false);
-      setConfirmOpen(false);
+      setConfirmStep(0);
       setPendingDeleteId(null);
     }
   };
@@ -284,53 +291,170 @@ const ShowClasses = () => {
           <SpeedDialTemplate actions={actions} />
         </>
       )}
-      {/* Confirmation Dialog */}
+      {/* ── STEP 1: Warning Dialog ── */}
       <Dialog
-        open={confirmOpen}
-        onClose={() => !deleting && setConfirmOpen(false)}
+        open={confirmStep === 1}
+        onClose={cancelDelete}
         PaperProps={{
           sx: {
             borderRadius: 4,
             background: 'var(--clr-surface-1)',
-            border: '1px solid var(--clr-border)',
-            p: 1,
-            minWidth: 360,
+            border: '1px solid rgba(239,68,68,0.25)',
+            p: 0,
+            minWidth: 420,
+            overflow: 'hidden',
           }
         }}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontWeight: 900 }}>
-          <WarningAmberRounded sx={{ color: '#f59e0b', fontSize: '1.8rem' }} />
-          Delete Batch?
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ color: 'var(--clr-text-secondary)', fontWeight: 600 }}>
-            You are about to permanently delete <strong style={{ color: 'var(--clr-text-primary)' }}>"{pendingDeleteName}"</strong>.
-            <br /><br />
-            This will also <strong style={{ color: '#ef4444' }}>delete all subjects</strong> in this batch
-            and <strong style={{ color: '#ef4444' }}>unlink all students</strong> from it.
-            <br /><br />
-            This action <strong>cannot be undone</strong>.
-          </DialogContentText>
+        {/* Red warning banner */}
+        <Box sx={{
+          background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+          p: 3,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+        }}>
+          <WarningAmberRounded sx={{ color: '#fbbf24', fontSize: '2.5rem' }} />
+          <Box>
+            <Typography sx={{ color: '#fff', fontWeight: 900, fontSize: '1.2rem', letterSpacing: '-0.02em' }}>
+              Danger Zone
+            </Typography>
+            <Typography sx={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.82rem', fontWeight: 600 }}>
+              This action is permanent and irreversible
+            </Typography>
+          </Box>
+        </Box>
+
+        <DialogContent sx={{ p: 3 }}>
+          {/* Warning card */}
+          <Box sx={{
+            background: 'rgba(239,68,68,0.06)',
+            border: '1px solid rgba(239,68,68,0.2)',
+            borderRadius: 3,
+            p: 2.5,
+            mb: 2.5,
+          }}>
+            <Typography sx={{ fontWeight: 900, color: '#ef4444', mb: 1.5, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              ⚠️ What will be deleted
+            </Typography>
+            {[
+              { icon: '🗂️', text: `Batch "${pendingDeleteName}" will be permanently removed` },
+              { icon: '📚', text: 'All subjects assigned to this batch will be deleted' },
+              { icon: '👤', text: 'All students will be unlinked (accounts remain, batch removed)' },
+            ].map((item, i) => (
+              <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: i < 2 ? 1.5 : 0 }}>
+                <Typography sx={{ fontSize: '1.1rem', mt: 0.1 }}>{item.icon}</Typography>
+                <Typography sx={{ color: 'var(--clr-text-secondary)', fontWeight: 600, fontSize: '0.88rem', lineHeight: 1.5 }}>
+                  {item.text}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+
+          <Typography sx={{ color: 'var(--clr-text-muted)', fontSize: '0.82rem', fontWeight: 600, textAlign: 'center' }}>
+            Are you sure you want to proceed to the final step?
+          </Typography>
         </DialogContent>
-        <DialogActions sx={{ p: 2, gap: 1 }}>
+
+        <DialogActions sx={{ p: 2.5, pt: 0, gap: 1.5 }}>
           <Button
-            onClick={() => setConfirmOpen(false)}
-            disabled={deleting}
-            sx={{ fontWeight: 700, borderRadius: 2, color: 'var(--clr-text-secondary)' }}
+            onClick={cancelDelete}
+            fullWidth
+            sx={{
+              fontWeight: 700, borderRadius: 2,
+              border: '1px solid var(--clr-border)',
+              color: 'var(--clr-text-secondary)',
+            }}
           >
-            Cancel
+            No, Keep Batch
           </Button>
+          <Button
+            onClick={() => setConfirmStep(2)}
+            fullWidth
+            variant="outlined"
+            color="error"
+            sx={{ fontWeight: 800, borderRadius: 2 }}
+            startIcon={<WarningAmberRounded />}
+          >
+            I Understand, Continue
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── STEP 2: Final Confirmation ── */}
+      <Dialog
+        open={confirmStep === 2}
+        onClose={cancelDelete}
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            background: 'var(--clr-surface-1)',
+            border: '1px solid rgba(239,68,68,0.35)',
+            p: 0,
+            minWidth: 400,
+            overflow: 'hidden',
+          }
+        }}
+      >
+        <Box sx={{
+          background: 'rgba(239,68,68,0.08)',
+          borderBottom: '1px solid rgba(239,68,68,0.15)',
+          p: 3,
+          textAlign: 'center',
+        }}>
+          <Typography sx={{ fontSize: '3rem', mb: 1 }}>🗑️</Typography>
+          <Typography sx={{ fontWeight: 900, fontSize: '1.25rem', color: 'var(--clr-text-primary)', letterSpacing: '-0.02em' }}>
+            Final Confirmation
+          </Typography>
+          <Typography sx={{ color: '#ef4444', fontWeight: 700, fontSize: '0.9rem', mt: 0.5 }}>
+            You cannot undo this action
+          </Typography>
+        </Box>
+
+        <DialogContent sx={{ p: 3, textAlign: 'center' }}>
+          <Typography sx={{ color: 'var(--clr-text-secondary)', fontWeight: 600, mb: 1 }}>
+            You are about to permanently delete batch:
+          </Typography>
+          <Typography sx={{
+            fontWeight: 900, fontSize: '1.3rem',
+            color: 'var(--clr-text-primary)',
+            background: 'rgba(239,68,68,0.08)',
+            border: '1px solid rgba(239,68,68,0.2)',
+            borderRadius: 2, py: 1.5, px: 3,
+            mb: 3,
+            display: 'inline-block',
+          }}>
+            {pendingDeleteName}
+          </Typography>
+
           <Button
             onClick={confirmDelete}
             disabled={deleting}
+            fullWidth
             variant="contained"
             color="error"
-            sx={{ fontWeight: 800, borderRadius: 2, px: 3 }}
-            startIcon={deleting ? <CircularProgress size={16} color="inherit" /> : <DeleteOutlineRounded />}
+            size="large"
+            sx={{
+              fontWeight: 900, borderRadius: 2.5, py: 1.8,
+              fontSize: '1rem', letterSpacing: '0.02em',
+              background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+              boxShadow: '0 4px 20px rgba(220,38,38,0.35)',
+              '&:hover': { boxShadow: '0 8px 30px rgba(220,38,38,0.45)' },
+            }}
+            startIcon={deleting ? <CircularProgress size={20} color="inherit" /> : <DeleteOutlineRounded />}
           >
-            {deleting ? 'Deleting...' : 'Yes, Delete Batch'}
+            {deleting ? 'Deleting Batch...' : `Delete "${pendingDeleteName}" Forever`}
           </Button>
-        </DialogActions>
+
+          <Button
+            onClick={cancelDelete}
+            disabled={deleting}
+            fullWidth
+            sx={{ mt: 1.5, fontWeight: 700, color: 'var(--clr-text-muted)', borderRadius: 2 }}
+          >
+            Cancel — Go Back
+          </Button>
+        </DialogContent>
       </Dialog>
 
       <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
