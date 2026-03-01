@@ -20,6 +20,10 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { addStuff } from '../../../redux/userRelated/userHandle';
 import { underControl } from '../../../redux/userRelated/userSlice';
+import styled from "styled-components";
+import { motion, AnimatePresence } from "framer-motion";
+import Popup from '../../../components/Popup';
+import SchoolRounded from "@mui/icons-material/SchoolRounded";
 
 const AddBatch = () => {
     const dispatch = useDispatch();

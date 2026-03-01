@@ -17,6 +17,7 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 const StudentProfile = () => {
   const { currentUser } = useSelector((state) => state.user);
   const dispatch = useDispatch();
+  const [scanModalOpen, setScanModalOpen] = React.useState(false);
 
   if (!currentUser) return null;
 
@@ -30,8 +31,6 @@ const StudentProfile = () => {
 
   const sclassName = currentUser?.sclassName;
   const studentSchool = currentUser?.school;
-
-  const [scanModalOpen, setScanModalOpen] = React.useState(false);
 
   const handleFaceCapture = ({ image, descriptor }) => {
     dispatch(updateUser({

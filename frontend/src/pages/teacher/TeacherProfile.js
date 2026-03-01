@@ -42,6 +42,43 @@ const TeacherProfile = () => {
   const dispatch = useDispatch();
   const { currentUser, status, error } = useSelector((state) => state.user);
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [loader, setLoader] = useState(false);
+
+  // Form State
+  const [formData, setFormData] = useState({
+    officialEmail: currentUser?.officialEmail || '',
+    subjectExpertise: currentUser?.subjectExpertise || '',
+    education: currentUser?.education || '',
+    officeLocation: currentUser?.officeLocation || '',
+    experience: currentUser?.experience || '',
+    projects: currentUser?.projects || '',
+    designation: currentUser?.designation || 'Assistant Professor',
+    hodMessage: currentUser?.hodMessage || '',
+    profilePic: currentUser?.profilePic || '',
+  });
+
+  useEffect(() => {
+    setFormData({
+      officialEmail: currentUser?.officialEmail || '',
+      subjectExpertise: currentUser?.subjectExpertise || '',
+      education: currentUser?.education || '',
+      officeLocation: currentUser?.officeLocation || '',
+      experience: currentUser?.experience || '',
+      projects: currentUser?.projects || '',
+      designation: currentUser?.designation || 'Assistant Professor',
+      hodMessage: currentUser?.hodMessage || '',
+      profilePic: currentUser?.profilePic || '',
+    });
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (status === 'added' || status === 'success') {
+      setLoader(false);
+      setIsEditing(false);
+    }
+  }, [status]);
+
   if (!currentUser) return null;
 
   // Verify onboarding
@@ -51,36 +88,6 @@ const TeacherProfile = () => {
     return <ProfileOnboarding user={currentUser} type="Faculty" />;
   }
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [loader, setLoader] = useState(false);
-
-  // Form State
-  const [formData, setFormData] = useState({
-    officialEmail: currentUser.officialEmail || '',
-    subjectExpertise: currentUser.subjectExpertise || '',
-    education: currentUser.education || '',
-    officeLocation: currentUser.officeLocation || '',
-    experience: currentUser.experience || '',
-    projects: currentUser.projects || '',
-    designation: currentUser.designation || 'Assistant Professor',
-    hodMessage: currentUser.hodMessage || '',
-    profilePic: currentUser.profilePic || '',
-  });
-
-  useEffect(() => {
-    setFormData({
-      officialEmail: currentUser.officialEmail || '',
-      subjectExpertise: currentUser.subjectExpertise || '',
-      education: currentUser.education || '',
-      officeLocation: currentUser.officeLocation || '',
-      experience: currentUser.experience || '',
-      projects: currentUser.projects || '',
-      designation: currentUser.designation || 'Assistant Professor',
-      hodMessage: currentUser.hodMessage || '',
-      profilePic: currentUser.profilePic || '',
-    });
-  }, [currentUser]);
-
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -89,13 +96,6 @@ const TeacherProfile = () => {
     setLoader(true);
     dispatch(updateUser(formData, currentUser._id));
   };
-
-  useEffect(() => {
-    if (status === 'added' || status === 'success') {
-      setLoader(false);
-      setIsEditing(false);
-    }
-  }, [status]);
 
   const initials = currentUser.name
     ? currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()

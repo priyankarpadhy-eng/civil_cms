@@ -22,8 +22,6 @@ const StudentHomePage = () => {
   const { subjectsList } = useSelector((state) => state.sclass);
   const [subjectAttendance, setSubjectAttendance] = useState([]);
 
-  if (!currentUser) return null;
-
   const classID = currentUser?.sclassName?._id || currentUser?.sclass_id || null;
 
   useEffect(() => {
@@ -40,6 +38,8 @@ const StudentHomePage = () => {
       setSubjectAttendance(userDetails.attendance || []);
     }
   }, [userDetails]);
+
+  if (!currentUser) return null;
 
   const numberOfSubjects = subjectsList?.length || 0;
   const overallAttendancePercentage = calculateOverallAttendancePercentage(subjectAttendance);
