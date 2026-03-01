@@ -81,3 +81,19 @@ export const updateTeacherFields = (teacherId, fields) => async (dispatch) => {
         dispatch(getError(error.message));
     }
 }
+
+export const updateTeachSubject = (teacherId, teachSubject) => async (dispatch) => {
+    dispatch(getRequest());
+
+    try {
+        const { error } = await supabase
+            .from('subjects')
+            .update({ teacher_id: teacherId })
+            .eq('id', teachSubject);
+
+        if (error) throw error;
+        dispatch(postDone());
+    } catch (error) {
+        dispatch(getError(error.message));
+    }
+};
