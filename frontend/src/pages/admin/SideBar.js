@@ -27,6 +27,7 @@ import AccountBalanceWalletRoundedIcon from '@mui/icons-material/AccountBalanceW
 import ShoppingCartRoundedIcon from '@mui/icons-material/ShoppingCartRounded';
 import SupervisorAccountRoundedIcon from '@mui/icons-material/SupervisorAccountRounded';
 import WorkspacePremiumRoundedIcon from '@mui/icons-material/WorkspacePremiumRounded';
+import VerifiedUserRoundedIcon from '@mui/icons-material/VerifiedUserRounded';
 
 const navItems = [
     { label: 'Home', icon: HomeRoundedIcon, path: '/', match: ['/', '/Admin/dashboard'] },
@@ -41,6 +42,7 @@ const navItems = [
     { label: 'Budgeting', icon: AccountBalanceWalletRoundedIcon, path: '/Admin/budget', match: ['/Admin/budget'] },
     { label: 'Procurement', icon: ShoppingCartRoundedIcon, path: '/Admin/procurement', match: ['/Admin/procurement'] },
     { label: 'Complains', icon: ReportRoundedIcon, path: '/Admin/complains', match: ['/Admin/complains'] },
+    { label: 'Verifications', icon: VerifiedUserRoundedIcon, path: '/Admin/verification', match: ['/Admin/verification'] },
     { label: 'User Management', icon: SupervisorAccountRoundedIcon, path: '/Admin/users', match: ['/Admin/users'] },
     { label: 'Alumni Approvals', icon: WorkspacePremiumRoundedIcon, path: '/Admin/alumni', match: ['/Admin/alumni'] },
 ];

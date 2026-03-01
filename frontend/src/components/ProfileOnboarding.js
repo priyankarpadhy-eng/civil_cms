@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -8,24 +8,53 @@ import {
     Paper,
     CircularProgress,
     Alert,
-    Divider
+    Divider,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    Avatar
 } from '@mui/material';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { updateUser } from '../redux/userRelated/userHandle';
+import { getAllSclasses } from '../redux/sclassRelated/sclassHandle';
 import styled from 'styled-components';
+import PhotoCameraRoundedIcon from '@mui/icons-material/PhotoCameraRounded';
 
 const ProfileOnboarding = ({ user, type }) => {
     const dispatch = useDispatch();
-    const [loader, setLoader] = useState(false);
+    const { sclassesList } = useSelector((state) => state.sclass);
+
+    useEffect(() => {
+        if (type === 'Student') {
+            dispatch(getAllSclasses(user._id || user.id, "Sclass")); // Fetch batches
+        }
+    }, [dispatch, type, user._id, user.id]);
 
     // Student fields
     const [studentData, setStudentData] = useState({
+        name: user.name || '',
+        phone: user.phone || '',
         roll_num: user.roll_num || '',
         registration_num: user.registration_num || '',
         admission_num: user.admission_num || '',
-        current_semester: user.current_semester || 1,
-        residence_address: user.residence_address || '',
+        residence_address: user.residence_address || '', // Home Address
+        current_address: user.current_address || '', // Hostel/Mess or Day scholar
+        sclass_id: user.sclass_id || '', // Batch Number
+        avatar_url: user.avatar_url || '',
+        verification_status: 'pending' // Automatically go into pending verification
     });
+
+    const handlePhotoUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setStudentData({ ...studentData, avatar_url: reader.result });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     // Faculty fields
     const [facultyData, setFacultyData] = useState({
@@ -63,7 +92,7 @@ const ProfileOnboarding = ({ user, type }) => {
 
                 <Alert severity="info" sx={{ mb: 4, borderRadius: '12px', fontWeight: 600 }}>
                     {type === 'Student'
-                        ? "Registration Number or Admission Number is required for identity verification."
+                        ? "Please fill in all details including a profile photo to submit for admin verification."
                         : "Faculty details help in departmental coordination and accreditation."}
                 </Alert>
 
@@ -71,7 +100,58 @@ const ProfileOnboarding = ({ user, type }) => {
                     <Grid container spacing={3}>
                         {type === 'Student' ? (
                             <>
+                                <Grid item xs={12} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                                    <Avatar
+                                        src={studentData.avatar_url}
+                                        sx={{ width: 100, height: 100, mb: 2, background: 'var(--clr-surface-2)', border: '2px solid var(--clr-primary)' }}
+                                    />
+                                    <Button variant="outlined" component="label" startIcon={<PhotoCameraRoundedIcon />} sx={{ borderRadius: 2 }}>
+                                        Upload Profile Photo
+                                        <input hidden accept="image/*" type="file" onChange={handlePhotoUpload} />
+                                    </Button>
+                                </Grid>
                                 <Grid item xs={12} sm={6}>
+                                    <TextField
+                                        fullWidth label="Email Address (Verified)"
+                                        value={user.email || ''}
+                                        disabled
+                                        InputProps={{ readOnly: true }}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <TextField
+                                        fullWidth label="Full Name"
+                                        value={studentData.name}
+                                        onChange={(e) => setStudentData({ ...studentData, name: e.target.value })}
+                                        required
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <TextField
+                                        fullWidth label="Mobile Number"
+                                        value={studentData.phone}
+                                        onChange={(e) => setStudentData({ ...studentData, phone: e.target.value })}
+                                        required
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <FormControl fullWidth required>
+                                        <InputLabel>Select Batch Number</InputLabel>
+                                        <Select
+                                            value={studentData.sclass_id}
+                                            label="Select Batch Number"
+                                            onChange={(e) => setStudentData({ ...studentData, sclass_id: e.target.value })}
+                                        >
+                                            <MenuItem value=""><em>None</em></MenuItem>
+                                            {sclassesList && sclassesList.map((sclass) => (
+                                                <MenuItem key={sclass._id} value={sclass._id}>
+                                                    {sclass.sclassName}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                                <Grid item xs={12} sm={4}>
                                     <TextField
                                         fullWidth label="Roll Number"
                                         value={studentData.roll_num}
@@ -79,14 +159,14 @@ const ProfileOnboarding = ({ user, type }) => {
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12} sm={6}>
+                                <Grid item xs={12} sm={4}>
                                     <TextField
                                         fullWidth label="Registration Number"
                                         value={studentData.registration_num}
                                         onChange={(e) => setStudentData({ ...studentData, registration_num: e.target.value })}
                                     />
                                 </Grid>
-                                <Grid item xs={12} sm={6}>
+                                <Grid item xs={12} sm={4}>
                                     <TextField
                                         fullWidth label="Admission Number"
                                         value={studentData.admission_num}
@@ -95,17 +175,18 @@ const ProfileOnboarding = ({ user, type }) => {
                                 </Grid>
                                 <Grid item xs={12} sm={6}>
                                     <TextField
-                                        fullWidth label="Current Semester" type="number"
-                                        value={studentData.current_semester}
-                                        onChange={(e) => setStudentData({ ...studentData, current_semester: e.target.value })}
+                                        fullWidth label="Home Address" multiline rows={2}
+                                        value={studentData.residence_address}
+                                        onChange={(e) => setStudentData({ ...studentData, residence_address: e.target.value })}
                                         required
                                     />
                                 </Grid>
-                                <Grid item xs={12}>
+                                <Grid item xs={12} sm={6}>
                                     <TextField
-                                        fullWidth label="Residence Address" multiline rows={3}
-                                        value={studentData.residence_address}
-                                        onChange={(e) => setStudentData({ ...studentData, residence_address: e.target.value })}
+                                        fullWidth label="Current Address (Hostel/Mess/Day Scholar)" multiline rows={2}
+                                        value={studentData.current_address}
+                                        onChange={(e) => setStudentData({ ...studentData, current_address: e.target.value })}
+                                        placeholder="e.g. Mahanadi Hall of Residence, Room 112"
                                         required
                                     />
                                 </Grid>
@@ -147,7 +228,7 @@ const ProfileOnboarding = ({ user, type }) => {
                                 variant="contained"
                                 disabled={loader}
                             >
-                                {loader ? <CircularProgress size={24} color="inherit" /> : 'Save & Continue'}
+                                {loader ? <CircularProgress size={24} color="inherit" /> : (type === 'Student' ? 'Verify and Save' : 'Save & Continue')}
                             </SubmitBtn>
                         </Grid>
                     </Grid>

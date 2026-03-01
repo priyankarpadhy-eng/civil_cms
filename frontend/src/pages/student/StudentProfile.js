@@ -22,11 +22,88 @@ const StudentProfile = () => {
   if (!currentUser) return null;
 
   // Check if onboarding is complete
-  const isComplete = (currentUser.roll_num || currentUser.rollNum) &&
-    (currentUser.registration_num || currentUser.admission_num);
+  const isStudent = currentUser.role === 'Student';
+  const needsOnboarding = isStudent && (!currentUser.verification_status || currentUser.verification_status === 'unsubmitted' || (!currentUser.roll_num && !currentUser.rollNum));
 
-  if (!isComplete) {
+  if (needsOnboarding) {
     return <ProfileOnboarding user={currentUser} type="Student" />;
+  }
+
+  const handleDownloadPDF = () => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Verification Form - ${currentUser.name}</title>
+          <style>
+            body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 40px; line-height: 1.6; color: #333; }
+            .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #1f2937; padding-bottom: 20px; }
+            .header img { height: 60px; margin-bottom: 10px; }
+            .profile-photo { width: 120px; height: 120px; border-radius: 8px; border: 1px solid #ccc; object-fit: cover; }
+            .row { margin-bottom: 12px; font-size: 14px; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px; }
+            .sig-box { margin-top: 100px; display: flex; justify-content: space-between; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h2>IGIT Sarang - Civil Engineering</h2>
+            <h3>Student Profile Verification Form</h3>
+          </div>
+          <div style="display: flex; gap: 30px; margin-bottom: 30px;">
+            ${currentUser.avatar_url ? `<img src="${currentUser.avatar_url}" class="profile-photo" alt="Profile Photo" />` : `<div class="profile-photo" style="display:flex;align-items:center;justify-content:center;background:#f3f4f6;color:#9ca3af;">No Photo</div>`}
+            <div>
+                <p><strong>Name:</strong> ${currentUser.name}</p>
+                <p><strong>Email (Verified):</strong> ${currentUser.email}</p>
+                <p><strong>Mobile:</strong> ${currentUser.phone || 'N/A'}</p>
+            </div>
+          </div>
+          <div class="row"><strong>Roll Number:</strong> ${currentUser.roll_num || currentUser.rollNum || 'N/A'}</div>
+          <div class="row"><strong>Registration No:</strong> ${currentUser.registration_num || 'N/A'}</div>
+          <div class="row"><strong>Admission No:</strong> ${currentUser.admission_num || 'N/A'}</div>
+          <div class="row"><strong>Home Address:</strong> ${currentUser.residence_address || 'N/A'}</div>
+          <div class="row"><strong>Current Address (Hostel/Day Scholar):</strong> ${currentUser.current_address || 'N/A'}</div>
+          
+          <div class="sig-box">
+             <div>_______________________<br/><br/>Student Signature</div>
+             <div>_______________________<br/><br/>Verifying Officer / Admin</div>
+          </div>
+          <script>
+            setTimeout(() => { window.print(); window.close(); }, 500);
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  if (isStudent && currentUser.verification_status === 'pending') {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center', maxWidth: 600, mx: 'auto', mt: { xs: 4, md: 10 } }}>
+        <Paper sx={{ p: 5, borderRadius: 6, border: '1px solid var(--clr-border)', background: 'var(--clr-surface-1)', boxShadow: 'var(--shadow-md)' }}>
+          <Box sx={{ width: 80, height: 80, background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+            <Typography fontSize="2.5rem">⌛</Typography>
+          </Box>
+          <Typography variant="h4" fontWeight={900} mb={2} color="var(--clr-text-primary)">
+            Profile Under Verification
+          </Typography>
+          <Typography sx={{ color: 'var(--clr-text-secondary)', mb: 4, fontSize: '1.05rem', lineHeight: 1.6 }}>
+            Your profile details have been saved successfully and are pending admin approval.
+            Please download your verification form and submit the physical copy along with your foundational documents to the department office.
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={handleDownloadPDF}
+            sx={{
+              borderRadius: 3, px: 4, py: 1.5, fontWeight: 800, fontSize: '1rem',
+              background: 'var(--grad-primary)',
+              boxShadow: 'var(--shadow-primary)'
+            }}
+          >
+            Download Verification PDF
+          </Button>
+        </Paper>
+      </Box>
+    );
   }
 
   const sclassName = currentUser?.sclassName;
@@ -71,10 +148,10 @@ const StudentProfile = () => {
           <SidebarCard>
             <AvatarBox>
               <StyledAvatar
-                src={currentUser.faceData || ""}
+                src={currentUser.avatar_url || currentUser.faceData || ""}
                 sx={{ width: 120, height: 120 }}
               >
-                {!currentUser.faceData && initials}
+                {!(currentUser.avatar_url || currentUser.faceData) && initials}
               </StyledAvatar>
               <StatusIndicator />
             </AvatarBox>
@@ -162,6 +239,10 @@ const StudentProfile = () => {
                   <AcademicItem>
                     <Label>Enrollment Year</Label>
                     <Value>{currentUser.batchNumber || '2022'}</Value>
+                  </AcademicItem>
+                  <AcademicItem>
+                    <Label>Profile Status</Label>
+                    <Value style={{ color: '#10b981' }}>Verified ✨</Value>
                   </AcademicItem>
                 </AcademicGrid>
               </MainCard>

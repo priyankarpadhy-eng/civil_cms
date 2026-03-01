@@ -25,6 +25,7 @@ import AdminStrategy from './AdminStrategy';
 import AdminFacultyPortfolio from './AdminFacultyPortfolio';
 import AdminBudget from './AdminBudget';
 import AdminProcurement from './AdminProcurement';
+import AdminVerification from './AdminVerification';
 
 import AddStudent from './studentRelated/AddStudent';
 import SeeComplains from './studentRelated/SeeComplains';
@@ -183,6 +184,7 @@ const AdminDashboard = () => {
                         <Route path="/Admin/faculty-portfolio" element={<AdminFacultyPortfolio />} />
                         <Route path="/Admin/budget" element={<AdminBudget />} />
                         <Route path="/Admin/procurement" element={<AdminProcurement />} />
+                        <Route path="/Admin/verification" element={<AdminVerification />} />
 
                         <Route path="/Admin/complains" element={<SeeComplains />} />
                         <Route path="/Admin/addnotice" element={<AddNotice />} />
