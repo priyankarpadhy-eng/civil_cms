@@ -29,6 +29,8 @@ import StudentAcademics from './StudentAcademics';
 import StudentFeesHostel from './StudentFeesHostel';
 import StudentPlacement from './StudentPlacement';
 import StudentAlumni from './StudentAlumni';
+import CdcAdminTP from './CdcAdminTP';
+import CdcCompanyList from './CdcCompanyList';
 
 import AccountMenu from '../../components/AccountMenu';
 import { AppBar, Drawer } from '../../components/styles';
@@ -166,6 +168,8 @@ const StudentDashboard = () => {
                         <Route path="/Student/fees-hostel" element={<StudentFeesHostel />} />
                         <Route path="/Student/placement" element={<StudentPlacement />} />
                         <Route path="/Student/alumni" element={<StudentAlumni />} />
+                        <Route path="/Student/placement-admin" element={<CdcAdminTP />} />
+                        <Route path="/Student/companies" element={<CdcCompanyList />} />
 
                         <Route path="/logout" element={<Logout />} />
                     </Routes>
