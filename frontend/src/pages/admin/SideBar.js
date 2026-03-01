@@ -41,7 +41,7 @@ const navItems = [
     { label: 'Budgeting', icon: AccountBalanceWalletRoundedIcon, path: '/Admin/budget', match: ['/Admin/budget'] },
     { label: 'Procurement', icon: ShoppingCartRoundedIcon, path: '/Admin/procurement', match: ['/Admin/procurement'] },
     { label: 'Complains', icon: ReportRoundedIcon, path: '/Admin/complains', match: ['/Admin/complains'] },
-    { label: 'Personnel', icon: SupervisorAccountRoundedIcon, path: '/Admin/personnel', match: ['/Admin/personnel'] },
+    { label: 'User Management', icon: SupervisorAccountRoundedIcon, path: '/Admin/users', match: ['/Admin/users'] },
     { label: 'Alumni Approvals', icon: WorkspacePremiumRoundedIcon, path: '/Admin/alumni', match: ['/Admin/alumni'] },
 ];
 

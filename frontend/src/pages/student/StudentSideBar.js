@@ -9,6 +9,7 @@ import {
     Typography,
 } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import ExitToAppRoundedIcon from '@mui/icons-material/ExitToAppRounded';
@@ -172,6 +173,17 @@ const SidebarItem = ({ item, open }) => {
 };
 
 const StudentSideBar = ({ open }) => {
+    const { currentRole } = useSelector(state => state.user);
+
+    const cdcItems = [
+        { label: 'Admin T&P', icon: WorkRoundedIcon, path: '/Student/placement-admin', match: ['/Student/placement-admin'], color: '#f59e0b' },
+        { label: 'Company List', icon: HandshakeRoundedIcon, path: '/Student/companies', match: ['/Student/companies'], color: '#10b981' },
+    ];
+
+    const repItems = [
+        { label: 'Class Notice', icon: CampaignRoundedIcon, path: '/Student/class-notices', match: ['/Student/class-notices'], color: '#ef4444' },
+    ];
+
     return (
         <Box sx={{ pt: 1, pb: 2 }}>
             {open && (
@@ -192,6 +204,24 @@ const StudentSideBar = ({ open }) => {
             {navItems.map(item => (
                 <SidebarItem key={item.label} item={item} open={open} />
             ))}
+
+            {currentRole === 'CdcCoordinator' && (
+                <>
+                    <Box sx={{ px: 3.5, pt: 2, pb: 1 }}>
+                        <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#f59e0b' }}>CDC COORDINATOR</Typography>
+                    </Box>
+                    {cdcItems.map(item => <SidebarItem key={item.label} item={item} open={open} />)}
+                </>
+            )}
+
+            {currentRole === 'BranchRep' && (
+                <>
+                    <Box sx={{ px: 3.5, pt: 2, pb: 1 }}>
+                        <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#ef4444' }}>BRANCH REP</Typography>
+                    </Box>
+                    {repItems.map(item => <SidebarItem key={item.label} item={item} open={open} />)}
+                </>
+            )}
 
             <Box sx={{ my: 2, px: 2 }}>
                 <Divider sx={{ borderColor: 'var(--clr-border)' }} />

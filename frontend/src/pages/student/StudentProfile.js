@@ -13,15 +13,21 @@ import CakeRoundedIcon from '@mui/icons-material/CakeRounded';
 import WcRoundedIcon from '@mui/icons-material/WcRounded';
 import FaceRetouchingNaturalRoundedIcon from '@mui/icons-material/FaceRetouchingNaturalRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import { useDispatch } from 'react-redux';
-import { updateUser } from '../../redux/userRelated/userHandle';
-import FaceScanModal from '../../components/FaceScanModal';
+import ProfileOnboarding from '../../components/ProfileOnboarding';
 
 const StudentProfile = () => {
   const { currentUser } = useSelector((state) => state.user);
   const dispatch = useDispatch();
 
   if (!currentUser) return null;
+
+  // Check if onboarding is complete
+  const isComplete = (currentUser.roll_num || currentUser.rollNum) &&
+    (currentUser.registration_num || currentUser.admission_num);
+
+  if (!isComplete) {
+    return <ProfileOnboarding user={currentUser} type="Student" />;
+  }
 
   const sclassName = currentUser?.sclassName;
   const studentSchool = currentUser?.school;
@@ -41,12 +47,9 @@ const StudentProfile = () => {
     : '?';
 
   const personalInfo = [
-    { icon: <CakeRoundedIcon />, label: 'Birthday', value: 'January 1, 2000' },
-    { icon: <WcRoundedIcon />, label: 'Gender', value: 'Male' },
-    { icon: <EmailRoundedIcon />, label: 'Institutional Email', value: 'student@igit.ac.in' },
-    { icon: <PhoneRoundedIcon />, label: 'Contact Number', value: '+91 98765 43210' },
-    { icon: <LocationOnRoundedIcon />, label: 'Hostel/Address', value: 'B-Block, IGIT Campus' },
-    { icon: <ContactPhoneRoundedIcon />, label: 'Emergency Contact', value: '+91 87654 32109' },
+    { icon: <EmailRoundedIcon />, label: 'Institutional Email', value: currentUser.email || 'student@igit.ac.in' },
+    { icon: <PhoneRoundedIcon />, label: 'Contact Number', value: currentUser.phone || '+91 98765 43210' },
+    { icon: <LocationOnRoundedIcon />, label: 'Hostel/Address', value: currentUser.residence_address || 'B-Block, IGIT Campus' },
   ];
 
   return (
@@ -78,7 +81,7 @@ const StudentProfile = () => {
               <StatusIndicator />
             </AvatarBox>
             <NameText>{currentUser.name}</NameText>
-            <RoleText>Student · Civil Engineering</RoleText>
+            <RoleText>{currentUser.role === 'CDC Coordinator' ? 'CDC Coordinator' : 'Student'} · Civil Engineering</RoleText>
 
             {currentUser.faceCaptured ? (
               <ChipBox color="#10b981">
@@ -97,8 +100,9 @@ const StudentProfile = () => {
             <Divider sx={{ width: '100%', my: 3, borderColor: 'var(--clr-border)' }} />
 
             <QuickTags>
-              <Tag color="#818cf8"><SchoolRoundedIcon /> {sclassName?.sclassName}</Tag>
-              <Tag color="#10b981"><BadgeRoundedIcon /> Roll: {currentUser.rollNum}</Tag>
+              <Tag color="#818cf8"><SchoolRoundedIcon /> {sclassName?.sclassName || 'B.Tech Civil Engg.'}</Tag>
+              <Tag color="#10b981"><BadgeRoundedIcon /> Roll: {currentUser.roll_num || currentUser.rollNum}</Tag>
+              <Tag color="#f59e0b"><BadgeRoundedIcon /> Reg: {currentUser.registration_num}</Tag>
             </QuickTags>
 
             <InstitutionBox>
@@ -147,7 +151,7 @@ const StudentProfile = () => {
                 <AcademicGrid>
                   <AcademicItem>
                     <Label>Current Semester</Label>
-                    <Value>{sclassName?.sclassName?.split(' ')[1] || '6th Sem'}</Value>
+                    <Value>{currentUser.current_semester || '6th Sem'}</Value>
                   </AcademicItem>
                   <AcademicItem>
                     <Label>Branch</Label>
@@ -155,11 +159,11 @@ const StudentProfile = () => {
                   </AcademicItem>
                   <AcademicItem>
                     <Label>Section</Label>
-                    <Value>A</Value>
+                    <Value>{currentUser.section || 'A'}</Value>
                   </AcademicItem>
                   <AcademicItem>
                     <Label>Enrollment Year</Label>
-                    <Value>2022</Value>
+                    <Value>{currentUser.batchNumber || '2022'}</Value>
                   </AcademicItem>
                 </AcademicGrid>
               </MainCard>

@@ -7,11 +7,10 @@ import StudentDashboard from './pages/student/StudentDashboard';
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import BranchRepDashboard from './pages/branchRep/BranchRepDashboard';
 import LoginPage from './pages/LoginPage';
-import AdminRegisterPage from './pages/admin/AdminRegisterPage';
+import RegisterPage from './pages/RegisterPage';
 import ChooseUser from './pages/ChooseUser';
 import AlumniPage from './pages/AlumniPage';
 import AlumniDashboard from './pages/alumni/AlumniDashboard';
-import AlumniRegisterPage from './pages/AlumniRegisterPage';
 import StudentPortfolio from './pages/public/StudentPortfolio';
 
 const App = () => {
@@ -21,36 +20,21 @@ const App = () => {
     const host = window.location.hostname;
     const parts = host.split('.');
 
-    // Known base instances that shouldn't trigger portfolio mode
-    const baseHosts = [
-      'localhost',
-      'civil-cms.vercel.app', // Your vercel app base
-      'civildeptigit.com'
-    ];
-
-    if (baseHosts.includes(host)) {
-      return null;
-    }
+    // Known base instances
+    const baseHosts = ['localhost', 'civil-cms.vercel.app', 'civildeptigit.com'];
+    if (baseHosts.includes(host)) return null;
 
     if (parts.length >= 3 && parts[0] !== 'www') {
       const isVercelApp = parts.slice(-2).join('.') === 'vercel.app';
-      if (isVercelApp && parts.length === 3) {
-        // This is a base vercel app link like my-app.vercel.app, not a student portfolio.
-        return null;
-      }
+      if (isVercelApp && parts.length === 3) return null;
       return parts[0];
     }
-
-    // Handle special case for local testing: student.localhost
-    if (parts.length === 2 && parts[1] === 'localhost') {
-      return parts[0];
-    }
+    if (parts.length === 2 && parts[1] === 'localhost') return parts[0];
     return null;
   }, []);
 
   return (
     <Router>
-      {/* Dynamic Portfolio View for Subdomains */}
       {subdomain ? (
         <Routes>
           <Route path="/" element={<StudentPortfolio slug={subdomain} />} />
@@ -58,29 +42,39 @@ const App = () => {
         </Routes>
       ) : (
         <>
-          {currentRole === null &&
+          {currentRole === null && (
             <Routes>
               <Route path="/" element={<Homepage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+
               <Route path="/portfolio/:slug" element={<StudentPortfolio />} />
               <Route path="/choose" element={<ChooseUser visitor="normal" />} />
               <Route path="/chooseasguest" element={<ChooseUser visitor="guest" />} />
               <Route path="/alumni" element={<AlumniPage />} />
 
-              <Route path="/Adminlogin" element={<LoginPage role="Admin" />} />
-              <Route path="/Studentlogin" element={<LoginPage role="Student" />} />
-              <Route path="/Teacherlogin" element={<LoginPage role="Teacher" />} />
-              <Route path="/Alumnilogin" element={<LoginPage role="Alumni" />} />
-
-              <Route path="/Adminregister" element={<AdminRegisterPage />} />
-              <Route path="/Alumniregister" element={<AlumniRegisterPage />} />
+              {/* Legacy routes redirected to unified login */}
+              <Route path="/Adminlogin" element={<Navigate to="/login" />} />
+              <Route path="/Studentlogin" element={<Navigate to="/login" />} />
+              <Route path="/Teacherlogin" element={<Navigate to="/login" />} />
+              <Route path="/Alumnilogin" element={<Navigate to="/login" />} />
 
               <Route path='*' element={<Navigate to="/" />} />
-            </Routes>}
+            </Routes>
+          )}
 
           {currentRole === "Admin" && <AdminDashboard />}
-          {currentRole === "Student" && <StudentDashboard />}
-          {currentRole === "Teacher" && <TeacherDashboard />}
-          {currentRole === "BranchRep" && <BranchRepDashboard />}
+
+          {/* Shared dashboards for student roles */}
+          {(currentRole === "Student" || currentRole === "BranchRep" || currentRole === "CdcCoordinator") && (
+            <StudentDashboard />
+          )}
+
+          {/* Shared dashboards for faculty roles */}
+          {(currentRole === "Faculty" || currentRole === "Teacher" || currentRole === "CdcFaculty") && (
+            <TeacherDashboard />
+          )}
+
           {currentRole === "Alumni" && <AlumniDashboard />}
         </>
       )}

@@ -36,9 +36,20 @@ const fadeUp = keyframes`
   to   { opacity:1; transform:translateY(0); }
 `;
 
+import ProfileOnboarding from '../../components/ProfileOnboarding';
+
 const TeacherProfile = () => {
   const dispatch = useDispatch();
   const { currentUser, status, error } = useSelector((state) => state.user);
+
+  if (!currentUser) return null;
+
+  // Verify onboarding
+  const isComplete = currentUser.designation && currentUser.officialEmail;
+
+  if (!isComplete) {
+    return <ProfileOnboarding user={currentUser} type="Faculty" />;
+  }
 
   const [isEditing, setIsEditing] = useState(false);
   const [loader, setLoader] = useState(false);
@@ -76,7 +87,7 @@ const TeacherProfile = () => {
 
   const handleSave = async () => {
     setLoader(true);
-    dispatch(updateUser(formData, currentUser._id, "Teacher"));
+    dispatch(updateUser(formData, currentUser._id));
   };
 
   useEffect(() => {

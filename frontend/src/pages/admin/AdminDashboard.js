@@ -49,8 +49,8 @@ import TeacherDetails from './teacherRelated/TeacherDetails';
 import AddClass from './classRelated/AddClass';
 import ClassDetails from './classRelated/ClassDetails';
 import ShowClasses from './classRelated/ShowClasses';
-import PersonnelManagement from './PersonnelManagement';
 import AdminAlumniManagement from './AdminAlumniManagement';
+import AdminUserManagement from './AdminUserManagement';
 import AccountMenu from '../../components/AccountMenu';
 
 const AdminDashboard = () => {
@@ -209,7 +209,7 @@ const AdminDashboard = () => {
                         <Route path="/Admin/teachers/choosesubject/:id" element={<ChooseSubject situation="Norm" />} />
                         <Route path="/Admin/teachers/choosesubject/:classID/:teacherID" element={<ChooseSubject situation="Teacher" />} />
                         <Route path="/Admin/teachers/addteacher/:id" element={<AddTeacher />} />
-                        <Route path="/Admin/personnel" element={<PersonnelManagement />} />
+                        <Route path="/Admin/users" element={<AdminUserManagement />} />
                         <Route path="/Admin/alumni" element={<AdminAlumniManagement />} />
                         <Route path="/logout" element={<Logout />} />
                     </Routes>
