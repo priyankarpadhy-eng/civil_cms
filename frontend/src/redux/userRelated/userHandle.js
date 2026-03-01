@@ -57,7 +57,8 @@ export const registerUser = (fields) => async (dispatch) => {
             options: {
                 data: {
                     name: fields.name,
-                    phone: fields.phone,
+                    phone: fields.phone || '',
+                    role: fields.role || 'Student',
                 }
             }
         });
@@ -179,4 +180,23 @@ export const addStuff = (fields, address) => async (dispatch) => {
 export const bulkAddStudents = () => async (dispatch) => {
     console.warn("bulkAddStudents is deprecated in the Unified Auth system.");
     dispatch(stuffAdded());
+};
+
+// Unified delete handler (Legacy name deleteUser used for all entities)
+export const deleteUser = (id, address) => async (dispatch) => {
+    dispatch(getRequest());
+    try {
+        let tableName = address.toLowerCase() + 's';
+        if (address === "Sclass" || address === "Class") tableName = "classes";
+        if (address === "Notice") tableName = "notices";
+        if (address === "Subject") tableName = "subjects";
+        if (address === "Student") tableName = "profiles"; // Students are in profiles now
+        if (address === "Teacher") tableName = "profiles"; // Teachers are in profiles now
+
+        const { error } = await supabase.from(tableName).delete().eq('id', id);
+        if (error) throw error;
+        dispatch(doneSuccess());
+    } catch (error) {
+        dispatch(getError(error.message));
+    }
 };

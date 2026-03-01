@@ -8,14 +8,14 @@ import {
     doneSuccess
 } from './teacherSlice';
 
-export const getAllTeachers = (id) => async (dispatch) => {
+export const getAllTeachers = () => async (dispatch) => {
     dispatch(getRequest());
 
     try {
         const { data, error } = await supabase
-            .from('teachers')
-            .select('*, teachSclass:teach_sclass_id(*), teachSubject:teach_subject_id(*)')
-            .eq('school_id', id);
+            .from('profiles')
+            .select('*, teachSclass:sclass_id(*)')
+            .eq('role', 'Faculty');
 
         if (error) {
             dispatch(getFailed(error.message));
@@ -28,16 +28,11 @@ export const getAllTeachers = (id) => async (dispatch) => {
                         ...teacher.teachSclass,
                         _id: teacher.teachSclass.id,
                         sclassName: teacher.teachSclass.sclass_name
-                    } : null,
-                    teachSubject: teacher.teachSubject ? {
-                        ...teacher.teachSubject,
-                        _id: teacher.teachSubject.id,
-                        subName: teacher.teachSubject.sub_name
                     } : null
                 }));
                 dispatch(getSuccess(mappedData));
             } else {
-                dispatch(getFailed("No teachers found"));
+                dispatch(getFailed("No faculty found"));
             }
         }
     } catch (error) {
@@ -50,8 +45,8 @@ export const getTeacherDetails = (id) => async (dispatch) => {
 
     try {
         const { data, error } = await supabase
-            .from('teachers')
-            .select('*, school:school_id (*), teach_sclass:teach_sclass_id (*), teach_subject:teach_subject_id (*)')
+            .from('profiles')
+            .select('*, teach_sclass:sclass_id (*)')
             .eq('id', id)
             .single();
 
@@ -63,11 +58,6 @@ export const getTeacherDetails = (id) => async (dispatch) => {
                 ...data.teach_sclass,
                 _id: data.teach_sclass.id,
                 sclassName: data.teach_sclass.sclass_name
-            } : null,
-            teachSubject: data.teach_subject ? {
-                ...data.teach_subject,
-                _id: data.teach_subject.id,
-                subName: data.teach_subject.sub_name
             } : null
         } : data;
         dispatch(doneSuccess(mappedData));
@@ -76,13 +66,13 @@ export const getTeacherDetails = (id) => async (dispatch) => {
     }
 }
 
-export const updateTeachSubject = (teacherId, teachSubject) => async (dispatch) => {
+export const updateTeacherFields = (teacherId, fields) => async (dispatch) => {
     dispatch(getRequest());
 
     try {
         const { error } = await supabase
-            .from('teachers')
-            .update({ teach_subject_id: teachSubject })
+            .from('profiles')
+            .update(fields)
             .eq('id', teacherId);
 
         if (error) throw error;

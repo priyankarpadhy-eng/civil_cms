@@ -6,14 +6,13 @@ import {
     getError
 } from './noticeSlice';
 
-export const getAllNotices = (id, address) => async (dispatch) => {
+export const getAllNotices = () => async (dispatch) => {
     dispatch(getRequest());
 
     try {
         const { data, error } = await supabase
             .from('notices')
-            .select('*')
-            .eq('school_id', id);
+            .select('*');
 
         if (error) {
             dispatch(getFailed(error.message));
