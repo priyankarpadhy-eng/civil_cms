@@ -10,8 +10,10 @@ import {
     IconButton,
     InputAdornment,
     Paper,
-    Divider
+    Divider,
+    Dialog
 } from '@mui/material';
+import { supabase } from '../supabaseClient';
 import { Visibility, VisibilityOff, ArrowBackRounded, EmailRounded, LocalPhoneRounded, PersonRounded, LockRounded } from '@mui/icons-material';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
@@ -36,6 +38,20 @@ const RegisterPage = () => {
     const [loader, setLoader] = useState(false);
     const [showPopup, setShowPopup] = useState(false);
     const [message, setMessage] = useState("");
+    const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
+
+    useEffect(() => {
+        // Auto-refresh when user clicks link in email and gets authenticated
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session) {
+                // Reload page cleanly so Redux rebuilds the user profile correctly from the new session
+                window.location.href = '/';
+            }
+        });
+        return () => {
+            authListener.subscription.unsubscribe();
+        };
+    }, []);
 
     const handleRegister = (e) => {
         e.preventDefault();
@@ -53,10 +69,8 @@ const RegisterPage = () => {
     useEffect(() => {
         if (status === 'added') {
             setLoader(false);
-            setMessage(response || "Registration successful! Please check your email for verification.");
-            setShowPopup(true);
+            setVerifyDialogOpen(true);
             dispatch(underControl());
-            // Optionally redirect after some time
         } else if (status === 'failed') {
             setMessage(response);
             setShowPopup(true);
@@ -187,6 +201,30 @@ const RegisterPage = () => {
                     </Content>
                 </RightPanel>
             </Container>
+
+            {/* Email Verification Dialog */}
+            <Dialog
+                open={verifyDialogOpen}
+                PaperProps={{
+                    sx: { borderRadius: 5, p: 2, textAlign: 'center', maxWidth: 420, background: 'var(--clr-surface-1)', border: '1px solid var(--clr-border)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }
+                }}
+            >
+                <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <Box sx={{ width: 80, height: 80, background: 'rgba(108, 99, 255, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3 }}>
+                        <EmailRounded sx={{ fontSize: 40, color: 'var(--clr-primary)' }} />
+                    </Box>
+                    <Typography variant="h5" fontWeight={900} mb={1.5} color="var(--clr-text-primary)">
+                        Check Your Email
+                    </Typography>
+                    <Typography color="var(--clr-text-secondary)" mb={4} lineHeight={1.6}>
+                        We've sent a verification link to <strong>{email}</strong>.
+                        Please click the link inside to activate your account.
+                        <br /><br />
+                        <span style={{ fontSize: '0.85rem', opacity: 0.8 }}>Waiting for verification...</span>
+                    </Typography>
+                    <CircularProgress size={30} thickness={5} sx={{ color: 'var(--clr-primary)' }} />
+                </Box>
+            </Dialog>
 
             <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
         </Wrapper>
