@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { IconButton, Box, Typography, Grid, Paper, Tooltip, InputBase, Avatar, Chip, Stack, CircularProgress } from '@mui/material';
+import { IconButton, Box, Typography, Grid, Paper, Tooltip, InputBase, Avatar, Chip, Stack, CircularProgress, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
 import {
   DeleteOutlineRounded,
   VisibilityRounded,
@@ -11,7 +11,8 @@ import {
   CalendarTodayRounded,
   PostAddRounded,
   PersonAddRounded,
-  MoreVertRounded
+  MoreVertRounded,
+  WarningAmberRounded
 } from "@mui/icons-material";
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -23,6 +24,7 @@ import SpeedDialTemplate from '../../../components/SpeedDialTemplate';
 import Popup from '../../../components/Popup';
 import SpeedDialIcon from '@mui/material/SpeedDialIcon';
 import AddCardIcon from '@mui/icons-material/AddCard';
+import { supabase } from '../../../supabaseClient';
 
 const ShowClasses = () => {
   const navigate = useNavigate();
@@ -35,15 +37,57 @@ const ShowClasses = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const [message, setMessage] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const [pendingDeleteName, setPendingDeleteName] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     dispatch(getAllSclasses(adminID, "Sclass"));
   }, [adminID, dispatch]);
 
-  const deleteHandler = (deleteID, address) => {
-    setMessage("Direct deletion of batches is currently limited to maintain data integrity. Please contact system admin.");
-    setShowPopup(true);
+  const deleteHandler = (deleteID, batchName) => {
+    setPendingDeleteId(deleteID);
+    setPendingDeleteName(batchName || "this batch");
+    setConfirmOpen(true);
   };
+
+  const confirmDelete = async () => {
+    setDeleting(true);
+    try {
+      // Unlink all students from this class first
+      await supabase
+        .from('profiles')
+        .update({ sclass_id: null })
+        .eq('sclass_id', pendingDeleteId);
+
+      // Delete all subjects belonging to this class
+      await supabase
+        .from('subjects')
+        .delete()
+        .eq('sclass_id', pendingDeleteId);
+
+      // Delete the class itself
+      const { error } = await supabase
+        .from('classes')
+        .delete()
+        .eq('id', pendingDeleteId);
+
+      if (error) throw error;
+
+      setMessage(`Batch "${pendingDeleteName}" deleted successfully.`);
+      setShowPopup(true);
+      dispatch(getAllSclasses(adminID, "Sclass")); // Refresh the list
+    } catch (err) {
+      setMessage("Error deleting batch: " + err.message);
+      setShowPopup(true);
+    } finally {
+      setDeleting(false);
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
+    }
+  };
+
 
   const filteredClasses = (sclassesList || []).map(item => ({
     ...item,
@@ -221,9 +265,9 @@ const ShowClasses = () => {
                               <PersonAddRounded fontSize="small" />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title="Delete">
+                          <Tooltip title="Delete Batch">
                             <IconButton
-                              onClick={() => deleteHandler(sclass._id, "Sclass")}
+                              onClick={() => deleteHandler(sclass._id, sclass.sclassName)}
                               sx={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.05)' }}
                             >
                               <DeleteOutlineRounded fontSize="small" />
@@ -240,6 +284,55 @@ const ShowClasses = () => {
           <SpeedDialTemplate actions={actions} />
         </>
       )}
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={confirmOpen}
+        onClose={() => !deleting && setConfirmOpen(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            background: 'var(--clr-surface-1)',
+            border: '1px solid var(--clr-border)',
+            p: 1,
+            minWidth: 360,
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontWeight: 900 }}>
+          <WarningAmberRounded sx={{ color: '#f59e0b', fontSize: '1.8rem' }} />
+          Delete Batch?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ color: 'var(--clr-text-secondary)', fontWeight: 600 }}>
+            You are about to permanently delete <strong style={{ color: 'var(--clr-text-primary)' }}>"{pendingDeleteName}"</strong>.
+            <br /><br />
+            This will also <strong style={{ color: '#ef4444' }}>delete all subjects</strong> in this batch
+            and <strong style={{ color: '#ef4444' }}>unlink all students</strong> from it.
+            <br /><br />
+            This action <strong>cannot be undone</strong>.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button
+            onClick={() => setConfirmOpen(false)}
+            disabled={deleting}
+            sx={{ fontWeight: 700, borderRadius: 2, color: 'var(--clr-text-secondary)' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmDelete}
+            disabled={deleting}
+            variant="contained"
+            color="error"
+            sx={{ fontWeight: 800, borderRadius: 2, px: 3 }}
+            startIcon={deleting ? <CircularProgress size={16} color="inherit" /> : <DeleteOutlineRounded />}
+          >
+            {deleting ? 'Deleting...' : 'Yes, Delete Batch'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
     </Box>
   );
