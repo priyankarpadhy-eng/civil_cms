@@ -27,12 +27,14 @@ const AdminVerification = () => {
         setLoading(true);
         const { data, error } = await supabase
             .from('profiles')
-            .select('*, sclassName:sclass_id(sclassName)')
+            .select('*, classes:sclass_id(*)')
             .eq('role', 'Student')
             .eq('verification_status', 'pending')
             .order('created_at', { ascending: false });
 
-        if (!error && data) {
+        if (error) {
+            console.error("Fetch Verification Error:", error.message);
+        } else if (data) {
             setRequests(data);
         }
         setLoading(false);
@@ -91,7 +93,7 @@ const AdminVerification = () => {
                                             {student.name}
                                         </Typography>
                                         <Typography variant="body2" color="var(--clr-text-muted)" fontWeight={600} mt={0.5}>
-                                            {student.roll_num || student.rollNum} • {student.sclassName?.sclassName || 'No Batch'}
+                                            {student.roll_num || student.rollNum} • {student.classes?.sclass_name || 'No Batch'}
                                         </Typography>
                                     </Box>
                                 </Box>
@@ -137,7 +139,7 @@ const AdminVerification = () => {
                                         <DetailItem label="Roll Number" value={selectedStudent.roll_num || selectedStudent.rollNum} />
                                         <DetailItem label="Registration Number" value={selectedStudent.registration_num} />
                                         <DetailItem label="Admission Number" value={selectedStudent.admission_num} />
-                                        <DetailItem label="Batch" value={selectedStudent.sclassName?.sclassName} />
+                                        <DetailItem label="Batch" value={selectedStudent.classes?.sclass_name} />
                                         <DetailItem label="Mobile Number" value={selectedStudent.phone} />
                                         <DetailItem label="Submitted At" value={new Date(selectedStudent.updated_at).toLocaleDateString()} />
                                     </DetailGrid>
