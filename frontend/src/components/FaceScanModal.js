@@ -8,24 +8,63 @@ import {
     IconButton,
     CircularProgress,
     Stack,
-    LinearProgress,
+    Alert
 } from '@mui/material';
 import {
     CloseRounded,
     CheckCircleRounded,
     SecurityRounded,
-    FaceRetouchingNaturalRounded,
-    RefreshRounded
+    LocationOffRounded
 } from '@mui/icons-material';
 import Webcam from 'react-webcam';
 import styled, { keyframes, css } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// TensorFlow & MediaPipe
+// TensorFlow & MediaPipe & Face-API
 import * as tf from '@tensorflow/tfjs-core';
 import '@tensorflow/tfjs-backend-webgl';
 import * as faceLandmarksDetection from '@tensorflow-models/face-landmarks-detection';
 import * as faceapi from '@vladmandic/face-api';
+import { FACEMESH_TESSELATION } from '@mediapipe/face_mesh';
+
+// --------------------------------------------------------------------------
+// Anti-Cheat: Geolocation Configuration
+// IGIT Sarang Coordinates
+const IGIT_LAT = 20.8633;
+const IGIT_LON = 85.2536;
+const MAX_RADIUS_KM = 5000; // Keep very large for dev bypass. Real-world: change to 5 (5km)
+
+const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // earth radius km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+};
+
+// --------------------------------------------------------------------------
+// Blink Detection (EAR - Eye Aspect Ratio)
+// Indices based on MediaPipe Face Mesh (468 points)
+const LEFT_EYE = { outer: 33, inner: 133, top: 159, bottom: 145 };
+const RIGHT_EYE = { outer: 362, inner: 263, top: 386, bottom: 374 };
+
+const calculateEAR = (points, eye) => {
+    const p_outer = points[eye.outer];
+    const p_inner = points[eye.inner];
+    const p_top = points[eye.top];
+    const p_bottom = points[eye.bottom];
+    if (!p_outer || !p_inner || !p_top || !p_bottom) return 1.0;
+
+    const height = Math.hypot(p_top.x - p_bottom.x, p_top.y - p_bottom.y);
+    const width = Math.hypot(p_outer.x - p_inner.x, p_outer.y - p_inner.y);
+    return height / width;
+};
+
+const BLINK_THRESHOLD = 0.20;
 
 const MODEL_URL = 'https://vladmandic.github.io/face-api/model/';
 
@@ -35,38 +74,56 @@ const FaceScanModal = ({ open, onClose, onCapture }) => {
     const detectorRef = useRef(null);
     const requestRef = useRef(null);
 
+    const [loading, setLoading] = useState(true);
+    const [geoError, setGeoError] = useState(null);
+
+    // State machine: 'Searching', 'Scanning', 'Blink Challenge', 'Success'
+    const [machineState, setMachineState] = useState('Searching');
+    const [statusMsg, setStatusMsg] = useState('Looking for face...');
+    const [blinkDetected, setBlinkDetected] = useState(false);
+
+    // Final Data
     const [imgSrc, setImgSrc] = useState(null);
     const [descriptor, setDescriptor] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [status, setStatus] = useState('Initializing AI...');
-    const [progress, setProgress] = useState(0);
-    const [currentTask, setCurrentTask] = useState('align'); // align, blink, left, right, up, down, complete
-    const [faceInCircle, setFaceInCircle] = useState(false);
 
-    // Task Completion States
-    const [tasks, setTasks] = useState({
-        align: false,
-        blink: false,
-        left: false,
-        right: false
-    });
+    // Track sequential blink frames
+    const blinkFrames = useRef(0);
+    const scanTimeCounter = useRef(0);
 
-    // Initialize Detectors & Recognition Models
+    // Initialize Geolocation + AI
     useEffect(() => {
-        const init = async () => {
+        if (!open) return;
+
+        // 1. Check Geolocation
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    const distance = getDistanceFromLatLonInKm(IGIT_LAT, IGIT_LON, latitude, longitude);
+                    if (distance > MAX_RADIUS_KM) {
+                        setGeoError(`Location locked. You are ${Math.round(distance)}km away from campus.`);
+                    } else {
+                        initAI();
+                    }
+                },
+                (error) => {
+                    setGeoError(`Location access required: ${error.message}`);
+                    initAI(); // Bypass for dev env if location completely fails
+                }
+            );
+        } else {
+            setGeoError("Geolocation not supported by browser.");
+        }
+
+        const initAI = async () => {
             try {
                 await tf.setBackend('webgl');
-
-                // 1. Load Landmarks Detector for Liveness
+                // Load MediaMesh for futuristic overlay + blink
                 const model = faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh;
-                const detectorConfig = {
-                    runtime: 'tfjs',
-                    refineLandmarks: true,
-                };
+                const detectorConfig = { runtime: 'tfjs', refineLandmarks: true };
                 detectorRef.current = await faceLandmarksDetection.createDetector(model, detectorConfig);
 
-                // 2. Load Face-API.js models for high-accuracy recognition (embeddings)
-                setStatus('Loading Recognition Core...');
+                // Load Vladmandic Face API to calculate high-accuracy 128-embeddings
                 await Promise.all([
                     faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
                     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
@@ -74,151 +131,131 @@ const FaceScanModal = ({ open, onClose, onCapture }) => {
                 ]);
 
                 setLoading(false);
-                setStatus('Ready to verify');
             } catch (err) {
-                console.error("AI Initialization Error:", err);
-                setStatus('AI Error. Try again.');
+                console.error("AI Error:", err);
+                setStatusMsg('Failed to load AI engine.');
             }
         };
-        if (open) init();
+
         return () => {
             if (requestRef.current) cancelAnimationFrame(requestRef.current);
         };
     }, [open]);
 
-    const handleCapture = async () => {
+    // Handle extraction after blink
+    const triggerSuccess = useCallback(async () => {
+        setMachineState('Success');
+        setStatusMsg('Verified!');
         if (!webcamRef.current) return;
 
-        try {
-            setStatus('Computing Biometric ID...');
-            const video = webcamRef.current.video;
+        const video = webcamRef.current.video;
+        const imageSrc = webcamRef.current.getScreenshot();
 
-            // Full-resolution capture for high accuracy
-            const imageSrc = webcamRef.current.getScreenshot();
+        // Generate Embedding (128 vectors)
+        const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
 
-            // Generate Descriptor (Embedding)
-            const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
-
-            if (detection) {
-                setImgSrc(imageSrc);
-                setDescriptor(Array.from(detection.descriptor)); // Convert Float32Array to regular array
-                cancelAnimationFrame(requestRef.current);
-                setStatus('Identity Verified');
-            } else {
-                setStatus('Recalibrating... look steady');
-                // Re-attempting in a bit if detection fails at capture moment
-            }
-        } catch (err) {
-            console.error("Capture Error:", err);
+        if (detection) {
+            setImgSrc(imageSrc);
+            setDescriptor(Array.from(detection.descriptor)); // Convert to simple array for Supabase vector search fallback
+            cancelAnimationFrame(requestRef.current);
+        } else {
+            setMachineState('Searching');
+            setStatusMsg('Capture failed. Please try again.');
         }
-    };
+    }, []);
 
-    // Detection Loop
-    const detect = useCallback(async () => {
-        if (!detectorRef.current || !webcamRef.current || !webcamRef.current.video || webcamRef.current.video.readyState !== 4) {
-            requestRef.current = requestAnimationFrame(detect);
+    // Core Animation & Detection Loop
+    const renderLoop = useCallback(async () => {
+        if (!detectorRef.current || !webcamRef.current || !webcamRef.current.video || !canvasRef.current || machineState === 'Success') {
+            if (machineState !== 'Success') requestRef.current = requestAnimationFrame(renderLoop);
             return;
         }
 
         const video = webcamRef.current.video;
+        if (video.readyState !== 4) {
+            requestRef.current = requestAnimationFrame(renderLoop);
+            return;
+        }
+
+        // Setup Canvas
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Estimate face
         const faces = await detectorRef.current.estimateFaces(video, { flipHorizontal: false });
 
         if (faces.length > 0) {
             const face = faces[0];
-            const keypoints = face.keypoints;
+            const pts = face.keypoints;
 
-            const box = face.box;
-            const videoWidth = video.videoWidth;
-            const videoHeight = video.videoHeight;
-
-            const centerX = box.xMin + box.width / 2;
-            const centerY = box.yMin + box.height / 2;
-            const isInCenter = centerX > videoWidth * 0.3 && centerX < videoWidth * 0.7 &&
-                centerY > videoHeight * 0.3 && centerY < videoHeight * 0.7;
-            const isRightSize = box.width > videoWidth * 0.25;
-
-            if (isInCenter && isRightSize) {
-                setFaceInCircle(true);
-                if (currentTask === 'align') {
-                    setTasks(prev => ({ ...prev, align: true }));
-                    setCurrentTask('blink');
-                    setStatus('Blink your eyes');
+            // DRAW MESH: Futuristic Cyan Tesselation
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)';
+            ctx.lineWidth = 1.0;
+            FACEMESH_TESSELATION.forEach(edge => {
+                const pt1 = pts[edge[0]];
+                const pt2 = pts[edge[1]];
+                if (pt1 && pt2) {
+                    ctx.beginPath();
+                    ctx.moveTo(pt1.x, pt1.y);
+                    ctx.lineTo(pt2.x, pt2.y);
+                    ctx.stroke();
                 }
-            } else {
-                setFaceInCircle(false);
-                if (!tasks.align) setStatus('Align face in circle');
-            }
+            });
 
-            if (tasks.align && !tasks.blink) {
-                const leftEyeTop = keypoints.find(k => k.name === 'leftEyeLower0');
-                const leftEyeBottom = keypoints.find(k => k.name === 'leftEyeUpper0');
-                if (leftEyeTop && leftEyeBottom) {
-                    const dist = Math.abs(leftEyeTop.y - leftEyeBottom.y);
-                    if (dist < 4) {
-                        setTasks(prev => ({ ...prev, blink: true }));
-                        setCurrentTask('left');
-                        setStatus('Turn head LEFT');
-                    }
+            // SCAN LINE ANIMATION
+            const scanSpeed = 1500; // ms
+            const currentY = (Date.now() % scanSpeed) / scanSpeed * canvas.height;
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.6)';
+            ctx.fillRect(0, currentY, canvas.width, 3);
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
+            ctx.fillRect(0, currentY - 20, canvas.width, 20);
+
+            // STATE MACHINE LOGIC
+            // EAR Calculation
+            const leftEar = calculateEAR(pts, LEFT_EYE);
+            const rightEar = calculateEAR(pts, RIGHT_EYE);
+            const avgEar = (leftEar + rightEar) / 2;
+
+            if (machineState === 'Searching') {
+                setMachineState('Scanning');
+                setStatusMsg('Hold still...');
+                scanTimeCounter.current = Date.now();
+            } else if (machineState === 'Scanning') {
+                if (Date.now() - scanTimeCounter.current > 2000) {
+                    setMachineState('Blink Challenge');
+                    setStatusMsg('Blink Now to Confirm');
                 }
-            } else if (tasks.blink && !tasks.left) {
-                const nose = keypoints.find(k => k.name === 'noseTip');
-                if (nose) {
-                    const distToLeft = Math.abs(nose.x - box.xMin);
-                    const distToRight = Math.abs(nose.x - (box.xMin + box.width));
-                    if (distToRight / distToLeft > 2.5) {
-                        setTasks(prev => ({ ...prev, left: true }));
-                        setCurrentTask('right');
-                        setStatus('Turn head RIGHT');
+            } else if (machineState === 'Blink Challenge') {
+                if (avgEar < BLINK_THRESHOLD) {
+                    blinkFrames.current++;
+                } else {
+                    if (blinkFrames.current > 0) {
+                        // Successfully blinked! The eye opened back up
+                        setBlinkDetected(true);
+                        triggerSuccess();
+                        blinkFrames.current = 0;
+                        return; // Halt loop
                     }
-                }
-            } else if (tasks.left && !tasks.right) {
-                const nose = keypoints.find(k => k.name === 'noseTip');
-                if (nose) {
-                    const distToLeft = Math.abs(nose.x - box.xMin);
-                    const distToRight = Math.abs(nose.x - (box.xMin + box.width));
-                    if (distToLeft / distToRight > 2.5) {
-                        setTasks(prev => ({ ...prev, right: true }));
-                        setCurrentTask('complete');
-                        handleCapture();
-                    }
+                    blinkFrames.current = 0;
                 }
             }
-
-            // 3. 3D Depth Consistency Check (Anti-Spoofing)
-            // Screens are 2D, so landmarks move rigidly. 3D faces have internal parallax.
-            const noseTip = keypoints.find(k => k.name === 'noseTip');
-            const leftEar = keypoints.find(k => k.name === 'leftEar');
-            const rightEar = keypoints.find(k => k.name === 'rightEar');
-
-            if (noseTip && leftEar && rightEar) {
-                // Calculate z-depth variance (relative to face box)
-                // In MediaPipe FaceMesh, z-coordinates are available.
-                const zNose = noseTip.z || 0;
-                const zEars = ((leftEar.z || 0) + (rightEar.z || 0)) / 2;
-                const depthDiff = Math.abs(zNose - zEars);
-
-                // Screen/2D Photo usually has very low depth variance in the point cloud
-                // Threshold for real 3D face depth typically > 15-20 units in normalized space
-                if (depthDiff < 12 && tasks.align) {
-                    setStatus('⚠️ 2D Spoof Detected! Use a real face.');
-                    setFaceInCircle(false);
-                    return;
-                }
-            }
-
-            const completedCount = Object.values(tasks).filter(Boolean).length;
-            setProgress((completedCount / 4) * 100);
+        } else {
+            setMachineState('Searching');
+            setStatusMsg('Looking for face...');
         }
 
-        requestRef.current = requestAnimationFrame(detect);
-    }, [currentTask, tasks]);
+        requestRef.current = requestAnimationFrame(renderLoop);
+    }, [machineState, triggerSuccess]);
 
     useEffect(() => {
-        if (!loading && open && !imgSrc) {
-            requestRef.current = requestAnimationFrame(detect);
+        if (!loading && open && !imgSrc && !geoError) {
+            requestRef.current = requestAnimationFrame(renderLoop);
         }
         return () => cancelAnimationFrame(requestRef.current);
-    }, [loading, open, imgSrc, detect]);
+    }, [loading, open, imgSrc, renderLoop, geoError]);
 
     const handleSave = () => {
         onCapture({ image: imgSrc, descriptor });
@@ -228,46 +265,29 @@ const FaceScanModal = ({ open, onClose, onCapture }) => {
     const reset = () => {
         setImgSrc(null);
         setDescriptor(null);
-        setTasks({ align: false, blink: false, left: false, right: false });
-        setCurrentTask('align');
-        setProgress(0);
-        setStatus('Ready to verify');
+        setMachineState('Searching');
+        setBlinkDetected(false);
+        setStatusMsg('Looking for face...');
     };
 
     return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            maxWidth="sm"
-            fullWidth
-            PaperProps={{
-                sx: {
-                    borderRadius: '28px',
-                    background: 'var(--clr-bg)',
-                    border: '1px solid var(--clr-border)',
-                    overflow: 'hidden'
-                }
-            }}
-        >
-            <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--clr-surface-1)' }}>
+        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { background: '#0a0a0a', border: '1px solid #1f2937', borderRadius: '24px', overflow: 'hidden' } }}>
+            <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#111827', borderBottom: '1px solid #374151' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box sx={{ p: 1, borderRadius: '10px', background: 'var(--clr-primary-glow)', color: 'var(--clr-primary)' }}>
-                        <SecurityRounded fontSize="small" />
-                    </Box>
-                    <Typography variant="h6" fontWeight={800}>Biometric ID Capture</Typography>
+                    <SecurityRounded sx={{ color: '#00ffff' }} />
+                    <Typography variant="h6" fontWeight={800} color="white">Advanced Biometric Scanner</Typography>
                 </Box>
-                <IconButton onClick={onClose} size="small"><CloseRounded /></IconButton>
+                <IconButton onClick={onClose} size="small" sx={{ color: 'white' }}><CloseRounded /></IconButton>
             </Box>
 
             <DialogContent sx={{ p: 4 }}>
-                <ProgressBarContainer>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'var(--clr-text-muted)', textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                        Verification Progress: {Math.round(progress)}%
-                    </Typography>
-                    <StyledProgress variant="determinate" value={progress} />
-                </ProgressBarContainer>
+                {geoError && (
+                    <Alert severity="warning" icon={<LocationOffRounded />} sx={{ mb: 3, borderRadius: '12px' }}>
+                        {geoError} (Proceeding in Dev Mode)
+                    </Alert>
+                )}
 
-                <CameraWrapper>
+                <CameraContainer>
                     {!imgSrc ? (
                         <>
                             <Webcam
@@ -276,25 +296,39 @@ const FaceScanModal = ({ open, onClose, onCapture }) => {
                                 screenshotFormat="image/jpeg"
                                 mirrored={true}
                                 videoConstraints={{ width: 640, height: 640, facingMode: "user" }}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                style={{
+                                    position: 'absolute',
+                                    top: 0, left: 0,
+                                    width: '100%', height: '100%',
+                                    objectFit: 'cover',
+                                    transform: 'scaleX(-1)' // Match mirrored
+                                }}
+                            />
+                            {/* Canvas for Glow Mesh and Scan Line */}
+                            <canvas
+                                ref={canvasRef}
+                                style={{
+                                    position: 'absolute',
+                                    top: 0, left: 0,
+                                    width: '100%', height: '100%',
+                                    pointerEvents: 'none',
+                                    transform: 'scaleX(-1)' // Align with mirrored webcam
+                                }}
                             />
 
-                            {/* Instagram Style Circle UI */}
-                            <CircleOverlay active={faceInCircle}>
-                                <div className="scanner-line" />
-                                <div className="frame-corners" />
-                                {currentTask !== 'align' && (
-                                    <TaskHint key={currentTask} status={status}>
-                                        {status}
-                                    </TaskHint>
-                                )}
-                            </CircleOverlay>
+                            <StatusOverlay state={machineState}>
+                                <Typography variant="h6" fontWeight={800}>{statusMsg}</Typography>
+                            </StatusOverlay>
+
+                            <HUDCorners>
+                                <div className="tl" /><div className="tr" /><div className="bl" /><div className="br" />
+                            </HUDCorners>
 
                             {loading && (
-                                <LoadingOverlay>
-                                    <CircularProgress size={40} thickness={5} />
-                                    <Typography sx={{ mt: 2, fontWeight: 700 }}>Initializing Security Engine...</Typography>
-                                </LoadingOverlay>
+                                <Box sx={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)' }}>
+                                    <CircularProgress sx={{ color: '#00ffff' }} />
+                                    <Typography color="white" mt={2} fontWeight={700}>Initializing Liveness AI...</Typography>
+                                </Box>
                             )}
                         </>
                     ) : (
@@ -303,46 +337,30 @@ const FaceScanModal = ({ open, onClose, onCapture }) => {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 src={imgSrc}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '32px' }}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '16px' }}
                             />
                             <SuccessOverlay>
-                                <CheckCircleRounded sx={{ fontSize: '4rem', color: '#10b981' }} />
-                                <Typography variant="h5" fontWeight={900}>Liveness Verified</Typography>
+                                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }}>
+                                    <CheckCircleRounded sx={{ fontSize: '5rem', color: '#10b981' }} />
+                                </motion.div>
+                                <Typography variant="h5" fontWeight={900} color="white" mt={1}>Liveness Verified!</Typography>
                             </SuccessOverlay>
                         </AnimatePresence>
                     )}
-                </CameraWrapper>
+                </CameraContainer>
 
-                <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ mt: 4 }}>
                     {!imgSrc ? (
-                        <Box sx={{ textAlign: 'center' }}>
-                            <Typography variant="body2" sx={{ color: 'var(--clr-text-secondary)', fontWeight: 600, mb: 2 }}>
-                                {tasks.align ? "Follow the on-screen prompts" : "Look directly into the camera to begin"}
-                            </Typography>
-                            {!faceInCircle && !loading && (
-                                <Typography variant="caption" sx={{ color: '#ef4444', fontWeight: 800 }}>
-                                    ⚠️ No face detected in frame
-                                </Typography>
-                            )}
-                        </Box>
+                        <Typography textAlign="center" color="#9ca3af" fontWeight={600}>
+                            Position your face within the frame. Keep your lighting clear.
+                        </Typography>
                     ) : (
-                        <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
-                            <Button
-                                variant="outlined"
-                                fullWidth
-                                onClick={reset}
-                                startIcon={<RefreshRounded />}
-                                sx={{ borderRadius: '16px', py: 1.5, fontWeight: 800, border: '2px solid' }}
-                            >
-                                Restart Scan
+                        <Stack direction="row" spacing={2}>
+                            <Button variant="outlined" fullWidth onClick={reset} sx={{ borderRadius: '16px', py: 1.5, fontWeight: 800, color: 'white', borderColor: '#374151' }}>
+                                Retake
                             </Button>
-                            <Button
-                                variant="contained"
-                                fullWidth
-                                onClick={handleSave}
-                                sx={{ borderRadius: '16px', py: 1.5, fontWeight: 800, background: 'var(--grad-primary)' }}
-                            >
-                                Save Biometric ID
+                            <Button variant="contained" fullWidth onClick={handleSave} sx={{ borderRadius: '16px', py: 1.5, fontWeight: 800, background: '#00ffff', color: 'black', '&:hover': { background: '#00cccc' } }}>
+                                Extract & Save Embedding
                             </Button>
                         </Stack>
                     )}
@@ -354,92 +372,43 @@ const FaceScanModal = ({ open, onClose, onCapture }) => {
 
 export default FaceScanModal;
 
-/* --- Styled Components --- */
+/* --- UI Styling for Futuristic Scanner --- */
 
-const scan = keyframes`
-  0% { transform: translateY(-120px) scaleX(0.8); opacity: 0; }
-  50% { opacity: 0.6; }
-  100% { transform: translateY(120px) scaleX(0.8); opacity: 0; }
+const pulseGreen = keyframes`
+  0% { text-shadow: 0 0 10px #10b981; }
+  50% { text-shadow: 0 0 30px #10b981; }
+  100% { text-shadow: 0 0 10px #10b981; }
 `;
 
-const pulse = keyframes`
-  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
-  70% { box-shadow: 0 0 0 20px rgba(99, 102, 241, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
-`;
-
-const CameraWrapper = styled.div`
+const CameraContainer = styled.div`
     position: relative;
     width: 320px;
     height: 320px;
     margin: 0 auto;
-    border-radius: 40px;
+    border-radius: 16px;
     overflow: hidden;
     background: #000;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-    border: 4px solid var(--clr-surface-2);
+    box-shadow: 0 0 40px rgba(0, 255, 255, 0.1);
+    border: 1px solid #1f2937;
 `;
 
-const CircleOverlay = styled.div`
+const StatusOverlay = styled.div`
     position: absolute;
-    inset: 20px;
-    border-radius: 50%;
-    border: 3px solid ${p => p.active ? '#10b981' : 'rgba(255,255,255,0.2)'};
-    box-shadow: 0 0 0 100px rgba(0,0,0,0.5);
-    z-index: 5;
-    transition: all 0.3s ease;
-
-    .scanner-line {
-        position: absolute;
-        top: 50%; left: 10%; right: 10%;
-        height: 2px;
-        background: #10b981;
-        box-shadow: 0 0 15px #10b981;
-        animation: ${scan} 2.5s infinite linear;
-        display: ${p => p.active ? 'block' : 'none'};
-    }
-
-    .frame-corners {
-        position: absolute;
-        inset: -10px;
-        border: 4px solid ${p => p.active ? '#10b981' : 'rgba(255,255,255,0.3)'};
-        border-radius: 50%;
-        clip-path: polygon(0 0, 10% 0, 10% 100%, 0 100%, 0 0, 100% 0, 100% 10%, 0 10%, 0 0, 100% 0, 100% 100%, 90% 100%, 90% 0, 100% 0, 100% 100%, 0 100%, 0 90%, 100% 90%, 100% 100%);
-        mask: radial-gradient(circle, transparent 65%, black 100%);
-    }
-
-    ${p => p.active && css`
-        animation: ${pulse} 2s infinite;
-    `}
-`;
-
-const TaskHint = styled.div`
-    position: absolute;
-    bottom: 20%;
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0,0,0,0.8);
-    color: white;
-    padding: 8px 20px;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    border: 1px solid ${p => p.state === 'Blink Challenge' ? '#f59e0b' : p.state === 'Success' ? '#10b981' : '#00ffff'};
+    color: ${p => p.state === 'Blink Challenge' ? '#f59e0b' : p.state === 'Success' ? '#10b981' : '#00ffff'};
+    padding: 8px 16px;
     border-radius: 50px;
-    font-size: 0.8rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
     white-space: nowrap;
-    border: 1px solid #10b981;
-`;
-
-const LoadingOverlay = styled.div`
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: var(--clr-bg);
-    z-index: 20;
-    color: var(--clr-text-primary);
+    text-align: center;
+    transition: all 0.3s;
+    ${p => p.state === 'Success' && css`
+        animation: ${pulseGreen} 1s infinite;
+    `}
 `;
 
 const SuccessOverlay = styled.div`
@@ -449,23 +418,25 @@ const SuccessOverlay = styled.div`
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(16, 185, 129, 0.1);
-    backdrop-filter: blur(8px);
+    background: rgba(16, 185, 129, 0.2);
+    backdrop-filter: blur(5px);
     z-index: 10;
-    color: #10b981;
 `;
 
-const ProgressBarContainer = styled.div`
-    width: 100%;
-    margin-bottom: 32px;
-`;
-
-const StyledProgress = styled(LinearProgress)`
-    height: 8px !important;
-    border-radius: 4px;
-    background-color: var(--clr-surface-2) !important;
-    .MuiLinearProgress-bar {
-        background: var(--grad-primary) !important;
-        border-radius: 4px;
+const HUDCorners = styled.div`
+    position: absolute;
+    inset: 10px;
+    pointer-events: none;
+    div {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        border-color: rgba(0, 255, 255, 0.6);
+        border-style: solid;
+        border-width: 0;
     }
+    .tl { top: 0; left: 0; border-top-width: 4px; border-left-width: 4px; }
+    .tr { top: 0; right: 0; border-top-width: 4px; border-right-width: 4px; }
+    .bl { bottom: 0; left: 0; border-bottom-width: 4px; border-left-width: 4px; }
+    .br { bottom: 0; right: 0; border-bottom-width: 4px; border-right-width: 4px; }
 `;
