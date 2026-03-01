@@ -29,7 +29,7 @@ import {
     Badge as RepIcon
 } from '@mui/icons-material';
 import styled from 'styled-components';
-import { getAllUsers, updateUserRole } from '../../../redux/userRelated/userHandle';
+import { getAllUsers, updateUserRole } from '../../redux/userRelated/userHandle';
 
 const AdminUserManagement = () => {
     const dispatch = useDispatch();

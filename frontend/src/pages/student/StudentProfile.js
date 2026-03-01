@@ -1,19 +1,18 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Avatar, Box, Typography, Grid, Paper, Divider } from '@mui/material';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
+import { updateUser } from '../../redux/userRelated/userHandle';
+import ProfileOnboarding from '../../components/ProfileOnboarding';
+import FaceScanModal from '../../components/FaceScanModal';
 import SchoolRoundedIcon from '@mui/icons-material/SchoolRounded';
 import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
 import PhoneRoundedIcon from '@mui/icons-material/PhoneRounded';
 import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
 import LocationOnRoundedIcon from '@mui/icons-material/LocationOnRounded';
-import ContactPhoneRoundedIcon from '@mui/icons-material/ContactPhoneRounded';
-import CakeRoundedIcon from '@mui/icons-material/CakeRounded';
-import WcRoundedIcon from '@mui/icons-material/WcRounded';
 import FaceRetouchingNaturalRoundedIcon from '@mui/icons-material/FaceRetouchingNaturalRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import ProfileOnboarding from '../../components/ProfileOnboarding';
 
 const StudentProfile = () => {
   const { currentUser } = useSelector((state) => state.user);
