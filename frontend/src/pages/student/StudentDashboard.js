@@ -46,10 +46,10 @@ const StudentDashboard = () => {
 
             {/* Top AppBar */}
             <AppBar open={open} position='fixed' sx={{
-                background: 'var(--clr-surface-1)',
-                backdropFilter: 'blur(10px)',
+                background: isDarkMode ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(16px)',
                 borderBottom: '1px solid var(--clr-border)',
-                boxShadow: 'none',
+                boxShadow: isDarkMode ? '0 10px 30px -10px rgba(0, 0, 0, 0.8)' : '0 10px 30px -10px rgba(0, 0, 0, 0.1)',
             }}>
                 <Toolbar sx={{ pr: '24px', gap: 1, minHeight: '64px !important' }}>
                     <Tooltip title={open ? "Collapse sidebar" : "Expand sidebar"} placement="bottom">
@@ -153,7 +153,7 @@ const StudentDashboard = () => {
                 }}
             >
                 <Toolbar sx={{ minHeight: '64px !important' }} />
-                <Box sx={{ p: { xs: 2.5, sm: 4 }, maxWidth: '1600px', mx: 'auto' }}>
+                <Box sx={{ p: { xs: 2.5, sm: 4 }, pt: { xs: 6, sm: 8 }, maxWidth: '1600px', mx: 'auto' }}>
                     <Routes>
                         <Route path="/" element={<StudentHomePage />} />
                         <Route path='*' element={<Navigate to="/" />} />

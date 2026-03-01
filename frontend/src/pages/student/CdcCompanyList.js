@@ -87,14 +87,14 @@ const CdcCompanyList = () => {
                 {filteredCompanies.map((company) => (
                     <Grid item xs={12} md={6} lg={4} key={company.id}>
                         <CompanyCard>
-                            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 3 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                    <Avatar sx={{ width: 56, height: 56, bgcolor: 'var(--clr-surface-2)', color: 'var(--clr-primary)', fontWeight: 900, fontSize: '1.5rem', border: '2px solid var(--clr-border)' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, minWidth: '200px' }}>
+                                    <Avatar sx={{ width: 56, height: 56, bgcolor: 'var(--clr-surface-2)', color: 'var(--clr-primary)', fontWeight: 900, fontSize: '1.5rem', border: '2px solid var(--clr-border)', flexShrink: 0 }}>
                                         {company.logo}
                                     </Avatar>
-                                    <Box>
+                                    <Box sx={{ minWidth: 0 }}>
                                         <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2, color: 'var(--clr-text-primary)' }}>{company.name}</Typography>
-                                        <Typography variant="caption" sx={{ color: 'var(--clr-primary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{company.type}</Typography>
+                                        <Typography variant="caption" sx={{ color: 'var(--clr-primary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mt: 0.5 }}>{company.type}</Typography>
                                     </Box>
                                 </Box>
                                 <Chip
@@ -102,6 +102,7 @@ const CdcCompanyList = () => {
                                     size="small"
                                     sx={{
                                         fontWeight: 800, borderRadius: '8px',
+                                        flexShrink: 0,
                                         bgcolor: company.status === 'Registration Open' ? '#10b98120' : company.status === 'Upcoming' ? '#3b82f620' : 'var(--clr-surface-2)',
                                         color: company.status === 'Registration Open' ? '#10b981' : company.status === 'Upcoming' ? '#3b82f6' : 'var(--clr-text-muted)',
                                     }}
