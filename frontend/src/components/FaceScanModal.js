@@ -98,6 +98,8 @@ const FaceScanModal = ({ open, onClose, onCapture }) => {
     useEffect(() => {
         if (!open) return;
 
+        console.log("Biometric Scanner Initializing...");
+
         // 1. Check Geolocation
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
@@ -111,35 +113,47 @@ const FaceScanModal = ({ open, onClose, onCapture }) => {
                     }
                 },
                 (error) => {
-                    setGeoError(`Location access required: ${error.message}`);
-                    initAI(); // Bypass for dev env if location completely fails
+                    console.warn("Geo skipped:", error.message);
+                    setGeoError(`Location access required for strict mode.`);
+                    initAI(); // Bypass for dev
                 }
             );
         } else {
-            setGeoError("Geolocation not supported by browser.");
+            initAI();
         }
 
-        const initAI = async () => {
+        async function initAI() {
             try {
+                setLoading(true);
+                await tf.ready();
                 await tf.setBackend('webgl');
-                // Load MediaMesh for futuristic overlay + blink
-                const model = faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh;
-                const detectorConfig = { runtime: 'tfjs', refineLandmarks: true };
-                detectorRef.current = await faceLandmarksDetection.createDetector(model, detectorConfig);
+                console.log("TensorFlow Ready. Backend:", tf.getBackend());
 
-                // Load Vladmandic Face API to calculate high-accuracy 128-embeddings
+                // Load MediaMesh
+                const model = faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh;
+                const detectorConfig = {
+                    runtime: 'tfjs',
+                    refineLandmarks: false, // Turned off for performance boost
+                    maxFaces: 1
+                };
+                detectorRef.current = await faceLandmarksDetection.createDetector(model, detectorConfig);
+                console.log("FaceMesh Detector Loaded.");
+
+                // Load FaceAPI for embedding extraction
                 await Promise.all([
                     faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
                     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
                     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
                 ]);
+                console.log("Models Loaded Successfully.");
 
                 setLoading(false);
             } catch (err) {
-                console.error("AI Error:", err);
-                setStatusMsg('Failed to load AI engine.');
+                console.error("AI Initialization Error:", err);
+                setStatusMsg('Engine Error. Refresh page.');
+                setLoading(false);
             }
-        };
+        }
 
         return () => {
             if (requestRef.current) cancelAnimationFrame(requestRef.current);

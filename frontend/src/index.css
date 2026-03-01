@@ -104,7 +104,9 @@ body {
   font-family: var(--font-base);
   background: var(--clr-bg);
   color: var(--clr-text-primary);
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+  /* Prevent double scrollbars; dashboard handles its own scrolling */
   line-height: 1.6;
   background-image: var(--grad-bg);
   background-attachment: fixed;
