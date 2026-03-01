@@ -23,6 +23,7 @@ import PhotoCameraRoundedIcon from '@mui/icons-material/PhotoCameraRounded';
 
 const ProfileOnboarding = ({ user, type }) => {
     const dispatch = useDispatch();
+    const [loader, setLoader] = useState(false);
     const { sclassesList } = useSelector((state) => state.sclass);
 
     useEffect(() => {

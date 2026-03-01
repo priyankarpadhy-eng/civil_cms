@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Avatar, Box, Typography, Grid, Paper, Divider } from '@mui/material';
+import { Avatar, Box, Typography, Grid, Paper, Divider, Button } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { updateUser } from '../../redux/userRelated/userHandle';
