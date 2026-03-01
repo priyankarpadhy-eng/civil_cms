@@ -13,14 +13,25 @@ export const getAllStudents = (id) => async (dispatch) => {
     try {
         const { data, error } = await supabase
             .from('students')
-            .select('*')
+            .select('*, sclassName:sclass_id(*)')
             .eq('school_id', id);
 
         if (error) {
             dispatch(getFailed(error.message));
         } else {
             if (data && data.length > 0) {
-                dispatch(getSuccess(data));
+                const mappedData = data.map(student => ({
+                    ...student,
+                    _id: student.id,
+                    rollNum: student.roll_num,
+                    registrationNum: student.registration_num,
+                    sclassName: student.sclassName ? {
+                        ...student.sclassName,
+                        _id: student.sclassName.id,
+                        sclassName: student.sclassName.sclass_name
+                    } : null
+                }));
+                dispatch(getSuccess(mappedData));
             } else {
                 dispatch(getFailed("No students found"));
             }

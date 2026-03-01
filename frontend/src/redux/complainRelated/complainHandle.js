@@ -19,7 +19,8 @@ export const getAllComplains = (id, address) => async (dispatch) => {
             dispatch(getFailed(error.message));
         } else {
             if (data && data.length > 0) {
-                dispatch(getSuccess(data));
+                const mappedData = data.map(complain => ({ ...complain, _id: complain.id }));
+                dispatch(getSuccess(mappedData));
             } else {
                 dispatch(getFailed("No complains found"));
             }

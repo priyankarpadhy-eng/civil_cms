@@ -52,7 +52,12 @@ export const getClassStudents = (id) => async (dispatch) => {
             dispatch(getFailedTwo(error.message));
         } else {
             if (data && data.length > 0) {
-                dispatch(getStudentsSuccess(data));
+                const mappedData = data.map(student => ({
+                    ...student,
+                    _id: student.id,
+                    rollNum: student.roll_num
+                }));
+                dispatch(getStudentsSuccess(mappedData));
             } else {
                 dispatch(getFailedTwo("No students found in this class"));
             }
@@ -73,7 +78,14 @@ export const getClassDetails = (id, address) => async (dispatch) => {
             .single();
 
         if (error) throw error;
-        dispatch(detailsSuccess(data));
+        const mappedData = data ? {
+            ...data,
+            _id: data.id,
+            sclassName: data.sclass_name,
+            passoutYear: data.passout_year,
+            batchNumber: data.batch_number
+        } : data;
+        dispatch(detailsSuccess(mappedData));
     } catch (error) {
         dispatch(getError(error.message));
     }
@@ -85,14 +97,25 @@ export const getSubjectList = (id, address) => async (dispatch) => {
     try {
         const { data, error } = await supabase
             .from('subjects')
-            .select('*')
+            .select('*, sclassName:sclass_id(*)')
             .eq(address === "ClassSubjects" ? 'sclass_id' : 'school_id', id);
 
         if (error) {
             dispatch(getFailed(error.message));
         } else {
             if (data && data.length > 0) {
-                dispatch(getSubjectsSuccess(data));
+                const mappedData = data.map(sub => ({
+                    ...sub,
+                    _id: sub.id,
+                    subName: sub.sub_name,
+                    subCode: sub.sub_code,
+                    sclassName: sub.sclassName ? {
+                        ...sub.sclassName,
+                        _id: sub.sclassName.id,
+                        sclassName: sub.sclassName.sclass_name
+                    } : null
+                }));
+                dispatch(getSubjectsSuccess(mappedData));
             } else {
                 dispatch(getFailed("No subjects found"));
             }
@@ -116,7 +139,13 @@ export const getTeacherFreeClassSubjects = (id) => async (dispatch) => {
             dispatch(getFailed(error.message));
         } else {
             if (data && data.length > 0) {
-                dispatch(getSubjectsSuccess(data));
+                const mappedData = data.map(sub => ({
+                    ...sub,
+                    _id: sub.id,
+                    subName: sub.sub_name,
+                    subCode: sub.sub_code
+                }));
+                dispatch(getSubjectsSuccess(mappedData));
             } else {
                 dispatch(getFailed("No free subjects found in this class"));
             }
@@ -137,7 +166,20 @@ export const getSubjectDetails = (id, address) => async (dispatch) => {
             .single();
 
         if (error) throw error;
-        dispatch(getSubDetailsSuccess(data));
+
+        const mappedData = data ? {
+            ...data,
+            _id: data.id,
+            subName: data.sub_name,
+            subCode: data.sub_code,
+            sclassName: data.classes ? {
+                ...data.classes,
+                _id: data.classes.id,
+                sclassName: data.classes.sclass_name
+            } : null
+        } : data;
+
+        dispatch(getSubDetailsSuccess(mappedData));
     } catch (error) {
         dispatch(getError(error.message));
     }

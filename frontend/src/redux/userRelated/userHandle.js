@@ -33,13 +33,27 @@ export const loginUser = (fields, role) => async (dispatch) => {
 
         // For simplicity during migration, we query the table directly.
         // In a production app, you should use Supabase Auth (auth.signInWithPassword).
-        const { data, error } = await supabase
-            .from(table)
-            .select(`
+        let selectQuery = "*";
+        if (role === 'Student') {
+            selectQuery = `
                 *,
                 sclassName:sclass_id (*),
                 school:school_id (*)
-            `)
+            `;
+        } else if (role === 'Teacher') {
+            selectQuery = `
+                *,
+                teachSclass:teach_sclass_id (*),
+                teachSubject:teach_subject_id (*),
+                school:school_id (*)
+            `;
+        } else if (role === 'Admin') {
+            selectQuery = `*`;
+        }
+
+        const { data, error } = await supabase
+            .from(table)
+            .select(selectQuery)
             .eq(role === 'Student' ? 'roll_num' : 'email', fields.rollNum || fields.email)
             .eq('password', fields.password)
             .single();
@@ -49,12 +63,31 @@ export const loginUser = (fields, role) => async (dispatch) => {
             return;
         }
 
-        // Map Postgres snake_case back to frontend camelCase for Student compatibility
+        // Map Postgres snake_case back to frontend camelCase for compatibility
         let compatData = { ...data, _id: data.id };
         if (role === 'Student') {
             compatData.rollNum = data.roll_num;
             if (data.sclassName) {
-                compatData.sclassName = { ...data.sclassName, _id: data.sclassName.id };
+                compatData.sclassName = {
+                    ...data.sclassName,
+                    _id: data.sclassName.id,
+                    sclassName: data.sclassName.sclass_name || data.sclassName.sclassName
+                };
+            }
+        } else if (role === 'Teacher') {
+            if (data.teachSclass) {
+                compatData.teachSclass = {
+                    ...data.teachSclass,
+                    _id: data.teachSclass.id,
+                    sclassName: data.teachSclass.sclass_name
+                }
+            }
+            if (data.teachSubject) {
+                compatData.teachSubject = {
+                    ...data.teachSubject,
+                    _id: data.teachSubject.id,
+                    subName: data.teachSubject.sub_name
+                }
             }
         }
 
@@ -139,7 +172,20 @@ export const getUserDetails = (id, address) => async (dispatch) => {
             .single();
 
         if (error) throw error;
-        dispatch(doneSuccess(data));
+
+        // Map Postgres snake_case back to frontend camelCase for compatibility
+        const compatData = {
+            ...data,
+            _id: data.id,
+            sclassName: data.classes ? {
+                ...data.classes,
+                _id: data.classes.id,
+                sclassName: data.classes.sclass_name || data.classes.sclassName
+            } : (data.sclass_id || null),
+            schoolName: data.school ? data.school.school_name : (data.school_name || null)
+        };
+
+        dispatch(doneSuccess(compatData));
     } catch (error) {
         dispatch(getError(error.message));
     }

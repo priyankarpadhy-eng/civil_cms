@@ -19,7 +19,8 @@ export const getAllNotices = (id, address) => async (dispatch) => {
             dispatch(getFailed(error.message));
         } else {
             if (data && data.length > 0) {
-                dispatch(getSuccess(data));
+                const mappedData = data.map(notice => ({ ...notice, _id: notice.id }));
+                dispatch(getSuccess(mappedData));
             } else {
                 dispatch(getFailed("No notices found"));
             }
