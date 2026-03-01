@@ -17,7 +17,8 @@ export const getAllStudents = () => async (dispatch) => {
                 *,
                 classes:sclass_id(*)
             `)
-            .eq('role', 'Student');
+            .eq('role', 'Student')
+            .eq('verification_status', 'verified');
 
         if (error) {
             dispatch(getFailed(error.message));

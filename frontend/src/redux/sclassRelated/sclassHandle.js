@@ -18,20 +18,32 @@ export const getAllSclasses = () => async (dispatch) => {
     try {
         const { data, error } = await supabase
             .from('classes')
-            .select('*');
+            .select(`
+                *,
+                profiles(id, role, verification_status),
+                subjects(id)
+            `);
 
         if (error) {
             dispatch(getFailedTwo(error.message));
         } else {
             if (data && data.length > 0) {
                 // Map to legacy fields for compatibility
-                const mappedData = data.map(item => ({
-                    ...item,
-                    _id: item.id,
-                    sclassName: item.sclass_name,
-                    passoutYear: item.passout_year,
-                    batchNumber: item.batch_number
-                }));
+                const mappedData = data.map(item => {
+                    // Count only verified students
+                    const studentCount = item.profiles ? item.profiles.filter(p => p.role === 'Student' && p.verification_status === 'verified').length : 0;
+                    const subjectCount = item.subjects ? item.subjects.length : 0;
+
+                    return {
+                        ...item,
+                        _id: item.id,
+                        sclassName: item.sclass_name,
+                        passoutYear: item.passout_year,
+                        batchNumber: item.batch_number,
+                        studentCount,
+                        subjectCount
+                    };
+                });
                 dispatch(getSuccess(mappedData));
             } else {
                 dispatch(getFailedTwo("No classes found"));
@@ -50,7 +62,8 @@ export const getClassStudents = (id) => async (dispatch) => {
             .from('profiles')
             .select('*')
             .eq('role', 'Student')
-            .eq('sclass_id', id);
+            .eq('sclass_id', id)
+            .eq('verification_status', 'verified');
 
         if (error) {
             dispatch(getFailedTwo(error.message));
