@@ -317,10 +317,10 @@ const ShowClasses = () => {
           <WarningAmberRounded sx={{ color: '#fbbf24', fontSize: '2.5rem' }} />
           <Box>
             <Typography sx={{ color: '#fff', fontWeight: 900, fontSize: '1.2rem', letterSpacing: '-0.02em' }}>
-              Danger Zone
+              Delete Batch
             </Typography>
             <Typography sx={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.82rem', fontWeight: 600 }}>
-              This action is permanent and irreversible
+              Please review what will be removed before continuing
             </Typography>
           </Box>
         </Box>
@@ -352,7 +352,7 @@ const ShowClasses = () => {
           </Box>
 
           <Typography sx={{ color: 'var(--clr-text-muted)', fontSize: '0.82rem', fontWeight: 600, textAlign: 'center' }}>
-            Are you sure you want to proceed to the final step?
+            Do you want to proceed? You will be asked to confirm once more.
           </Typography>
         </DialogContent>
 
@@ -404,10 +404,10 @@ const ShowClasses = () => {
         }}>
           <Typography sx={{ fontSize: '3rem', mb: 1 }}>🗑️</Typography>
           <Typography sx={{ fontWeight: 900, fontSize: '1.25rem', color: 'var(--clr-text-primary)', letterSpacing: '-0.02em' }}>
-            Final Confirmation
+            Confirm Deletion
           </Typography>
-          <Typography sx={{ color: '#ef4444', fontWeight: 700, fontSize: '0.9rem', mt: 0.5 }}>
-            You cannot undo this action
+          <Typography sx={{ color: 'var(--clr-text-muted)', fontWeight: 600, fontSize: '0.88rem', mt: 0.5 }}>
+            This will remove the batch and all related data
           </Typography>
         </Box>
 
