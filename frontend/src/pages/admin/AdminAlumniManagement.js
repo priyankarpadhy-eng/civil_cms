@@ -31,7 +31,7 @@ const AdminAlumniManagement = () => {
             const { data, error } = await supabase
                 .from('alumni')
                 .select('*')
-                .eq('school_id', currentUser.id || currentUser._id);
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
             setAlumni(data || []);

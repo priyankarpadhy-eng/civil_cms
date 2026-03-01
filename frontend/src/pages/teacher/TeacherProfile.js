@@ -18,6 +18,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { updateUser } from '../../redux/userRelated/userHandle';
 import { authSuccess } from '../../redux/userRelated/userSlice';
+import ProfileOnboarding from '../../components/ProfileOnboarding';
 
 // Icons
 import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
@@ -36,7 +37,7 @@ const fadeUp = keyframes`
   to   { opacity:1; transform:translateY(0); }
 `;
 
-import ProfileOnboarding from '../../components/ProfileOnboarding';
+
 
 const TeacherProfile = () => {
   const dispatch = useDispatch();

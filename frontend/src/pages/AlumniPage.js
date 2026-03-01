@@ -37,9 +37,9 @@ const AlumniPage = () => {
             try {
                 // Fetch from supabase where is_alumni is true
                 const { data: resData, error } = await supabase
-                    .from('students')
+                    .from('alumni')
                     .select('*')
-                    .eq('is_alumni', true);
+                    .order('created_at', { ascending: false });
 
                 if (error) throw error;
                 const data = resData && resData.length > 0 ? resData : [

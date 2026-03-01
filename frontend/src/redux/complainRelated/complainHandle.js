@@ -6,14 +6,14 @@ import {
     getError
 } from './complainSlice';
 
-export const getAllComplains = (id, address) => async (dispatch) => {
+export const getAllComplains = () => async (dispatch) => {
     dispatch(getRequest());
 
     try {
         const { data, error } = await supabase
             .from('complains')
-            .select('*')
-            .eq('school_id', id);
+            .select('*, user:user_id(name, email, role)')
+            .order('created_at', { ascending: false });
 
         if (error) {
             dispatch(getFailed(error.message));

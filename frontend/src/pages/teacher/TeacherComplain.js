@@ -17,22 +17,12 @@ const fadeUp = keyframes`
 const TeacherComplain = () => {
   const [complaint, setComplaint] = useState("");
   const [date, setDate] = useState("");
-  const dispatch = useDispatch();
-  const { status, currentUser, error } = useSelector(state => state.user);
-
-  const user = currentUser._id;
-  const school = currentUser.school._id;
-  const address = "Complain";
-
   const [loader, setLoader] = useState(false);
   const [message, setMessage] = useState("");
   const [showPopup, setShowPopup] = useState(false);
 
-  const submitHandler = (event) => {
-    event.preventDefault();
-    setLoader(true);
-    dispatch(addStuff({ user, date, complaint, school }, address));
-  };
+  const dispatch = useDispatch();
+  const { status, currentUser, error } = useSelector(state => state.user);
 
   useEffect(() => {
     if (status === "added") {
@@ -47,6 +37,18 @@ const TeacherComplain = () => {
       setShowPopup(true);
     }
   }, [status, error]);
+
+  if (!currentUser) return null;
+
+  const user = currentUser._id;
+  const school = currentUser.school?._id || currentUser.school_id;
+  const address = "Complain";
+
+  const submitHandler = (event) => {
+    event.preventDefault();
+    setLoader(true);
+    dispatch(addStuff({ user, date, complaint, school }, address));
+  };
 
   return (
     <Wrapper>

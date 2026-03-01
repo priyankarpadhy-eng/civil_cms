@@ -115,8 +115,9 @@ const TeacherFaceAttendance = () => {
         setLoading(true);
         try {
             const { data, error } = await supabase
-                .from('students')
+                .from('profiles')
                 .select('*')
+                .eq('role', 'Student')
                 .eq('sclass_id', sclassId);
 
             if (error) throw error;
@@ -226,7 +227,7 @@ const TeacherFaceAttendance = () => {
             const updatedAttendance = [...currentAttendance, newRecord];
 
             const { error } = await supabase
-                .from('students')
+                .from('profiles')
                 .update({ attendance: updatedAttendance })
                 .eq('id', student.id || student._id);
 

@@ -20,7 +20,6 @@ import {
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { getAllTeachers } from '../../redux/teacherRelated/teacherHandle';
-import { getSclassStudents } from '../../redux/sclassRelated/sclassHandle';
 import { updateUser } from '../../redux/userRelated/userHandle';
 import styled from 'styled-components';
 import { supabase } from '../../supabaseClient';
@@ -37,15 +36,15 @@ const PersonnelManagement = () => {
         setLoading(true);
         try {
             const [{ data: tData, error: tErr }, { data: sData, error: sErr }] = await Promise.all([
-                supabase.from('teachers').select('*').eq('school_id', currentUser.id || currentUser._id),
-                supabase.from('students').select('*, classes:sclass_id (*)').eq('school_id', currentUser.id || currentUser._id)
+                supabase.from('profiles').select('*, sclassName:sclass_id(*)').eq('role', 'Faculty'),
+                supabase.from('profiles').select('*, classes:sclass_id(*)').eq('role', 'Student')
             ]);
 
             if (tErr) throw tErr;
             if (sErr) throw sErr;
 
-            setTeachers(tData || []);
-            setStudents(sData || []);
+            setTeachers(tData?.map(t => ({ ...t, _id: t.id })) || []);
+            setStudents(sData?.map(s => ({ ...s, _id: s.id, sclassName: s.classes ? { ...s.classes, sclassName: s.classes.sclass_name } : null })) || []);
         } catch (err) {
             console.error(err);
         }
@@ -58,10 +57,9 @@ const PersonnelManagement = () => {
 
     const handleToggle = async (id, role, field, value) => {
         try {
-            const table = role === 'Teacher' ? 'teachers' : 'students';
-            const { error } = await supabase.from(table).update({ [field]: value }).eq('id', id);
+            const { error } = await supabase.from('profiles').update({ [field]: value }).eq('id', id);
             if (error) throw error;
-            fetchData(); // Refresh
+            fetchData();
         } catch (err) {
             console.error(err);
         }
