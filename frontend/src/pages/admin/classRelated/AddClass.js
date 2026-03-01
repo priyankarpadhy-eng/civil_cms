@@ -88,8 +88,8 @@ const AddBatch = () => {
                     <Grid container spacing={3}>
                         <Grid item xs={12}>
                             <StyledTextField
-                                label="Full Batch Name"
-                                placeholder="e.g. 43rd Batch Civil Engineering"
+                                label="Batch Name"
+                                placeholder="e.g. 43rd Batch"
                                 fullWidth
                                 value={batchName}
                                 onChange={(e) => setBatchName(e.target.value)}
@@ -108,7 +108,7 @@ const AddBatch = () => {
                         </Grid>
                         <Grid item xs={12} sm={6}>
                             <StyledTextField
-                                label="Batch Number / Code"
+                                label="Batch Number"
                                 placeholder="e.g. B-2024"
                                 fullWidth
                                 value={batchNumber}
