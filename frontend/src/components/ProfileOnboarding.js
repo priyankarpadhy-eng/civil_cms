@@ -63,6 +63,7 @@ const ProfileOnboarding = ({ user, type }) => {
         department: user.department || 'Civil Engineering',
         officialEmail: user.officialEmail || '',
         officeLocation: user.officeLocation || '',
+        verification_status: 'pending' // Faculty also needs approval now
     });
 
     const handleStudentSubmit = (e) => {
@@ -94,7 +95,7 @@ const ProfileOnboarding = ({ user, type }) => {
                 <Alert severity="info" sx={{ mb: 4, borderRadius: '12px', fontWeight: 600 }}>
                     {type === 'Student'
                         ? "Please fill in all details including a profile photo to submit for admin verification."
-                        : "Faculty details help in departmental coordination and accreditation."}
+                        : "Faculty details must be verified by the Admin or HOD before you can access the dashboard."}
                 </Alert>
 
                 <form onSubmit={type === 'Student' ? handleStudentSubmit : handleFacultySubmit}>

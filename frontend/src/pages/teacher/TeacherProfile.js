@@ -89,6 +89,27 @@ const TeacherProfile = () => {
     return <ProfileOnboarding user={currentUser} type="Faculty" />;
   }
 
+  if (currentUser.verification_status === 'pending') {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center', maxWidth: 600, mx: 'auto', mt: { xs: 4, md: 10 } }}>
+        <Paper sx={{ p: 5, borderRadius: 6, border: '1px solid var(--clr-border)', background: 'var(--clr-surface-1)', boxShadow: 'var(--shadow-md)' }}>
+          <Box sx={{ width: 80, height: 80, background: 'rgba(168, 85, 247, 0.1)', color: 'var(--clr-primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+            <Typography fontSize="2.5rem">🏫</Typography>
+          </Box>
+          <Typography variant="h4" fontWeight={900} mb={2} color="var(--clr-text-primary)">
+            Faculty Verification Pending
+          </Typography>
+          <Typography sx={{ color: 'var(--clr-text-secondary)', mb: 4, fontSize: '1.05rem', lineHeight: 1.6 }}>
+            Your faculty credentials have been submitted. An Administrator or the HOD must verify your official appointment before you can access the portal tools.
+          </Typography>
+          <Typography variant="body2" sx={{ fontWeight: 700, color: 'var(--clr-text-muted)' }}>
+            Please contact the Department Admin if you require urgent access.
+          </Typography>
+        </Paper>
+      </Box>
+    );
+  }
+
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
