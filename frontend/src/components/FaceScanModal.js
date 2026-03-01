@@ -59,12 +59,16 @@ const calculateEAR = (points, eye) => {
     const p_bottom = points[eye.bottom];
     if (!p_outer || !p_inner || !p_top || !p_bottom) return 1.0;
 
+    // Use vertical distance over horizontal distance
     const height = Math.hypot(p_top.x - p_bottom.x, p_top.y - p_bottom.y);
     const width = Math.hypot(p_outer.x - p_inner.x, p_outer.y - p_inner.y);
+
+    // Safety check to avoid division by zero
+    if (width === 0) return 1.0;
     return height / width;
 };
 
-const BLINK_THRESHOLD = 0.20;
+const BLINK_THRESHOLD = 0.25; // More lenient threshold (previously 0.20)
 
 const MODEL_URL = 'https://vladmandic.github.io/face-api/model/';
 
@@ -185,14 +189,21 @@ const FaceScanModal = ({ open, onClose, onCapture }) => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // Estimate face
-        const faces = await detectorRef.current.estimateFaces(video, { flipHorizontal: false });
+        // IMPORTANT: flipHorizontal should match the mirrored display logic
+        const faces = await detectorRef.current.estimateFaces(video, { flipHorizontal: true });
 
         if (faces.length > 0) {
             const face = faces[0];
             const pts = face.keypoints;
 
+            // Check if face is close enough (roughly spanning > 25% of the frame)
+            const box = face.box;
+            const faceArea = box.width * box.height;
+            const frameArea = canvas.width * canvas.height;
+            const isCloseEnough = (faceArea / frameArea) > 0.05;
+
             // DRAW MESH: Futuristic Cyan Tesselation
-            ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)';
+            ctx.strokeStyle = isCloseEnough ? 'rgba(0, 255, 255, 0.4)' : 'rgba(239, 68, 68, 0.4)';
             ctx.lineWidth = 1.0;
             FACEMESH_TESSELATION.forEach(edge => {
                 const pt1 = pts[edge[0]];
@@ -204,6 +215,13 @@ const FaceScanModal = ({ open, onClose, onCapture }) => {
                     ctx.stroke();
                 }
             });
+
+            if (!isCloseEnough) {
+                setMachineState('Scanning');
+                setStatusMsg('Move closer to the camera');
+                requestRef.current = requestAnimationFrame(renderLoop);
+                return;
+            }
 
             // SCAN LINE ANIMATION
             const scanSpeed = 1500; // ms
@@ -221,25 +239,22 @@ const FaceScanModal = ({ open, onClose, onCapture }) => {
 
             if (machineState === 'Searching') {
                 setMachineState('Scanning');
-                setStatusMsg('Hold still...');
+                setStatusMsg('Face detected. Hold still...');
                 scanTimeCounter.current = Date.now();
             } else if (machineState === 'Scanning') {
-                if (Date.now() - scanTimeCounter.current > 2000) {
+                if (Date.now() - scanTimeCounter.current > 1500) {
                     setMachineState('Blink Challenge');
                     setStatusMsg('Blink Now to Confirm');
                 }
             } else if (machineState === 'Blink Challenge') {
                 if (avgEar < BLINK_THRESHOLD) {
                     blinkFrames.current++;
-                } else {
-                    if (blinkFrames.current > 0) {
-                        // Successfully blinked! The eye opened back up
-                        setBlinkDetected(true);
-                        triggerSuccess();
-                        blinkFrames.current = 0;
-                        return; // Halt loop
-                    }
+                } else if (blinkFrames.current > 0) {
+                    // Successfully blinked! The eye opened back up
+                    setBlinkDetected(true);
+                    triggerSuccess();
                     blinkFrames.current = 0;
+                    return; // Halt loop
                 }
             }
         } else {
