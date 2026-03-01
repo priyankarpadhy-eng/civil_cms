@@ -16,7 +16,10 @@ import {
     CircularProgress,
     Button,
     Menu,
-    MenuItem
+    MenuItem,
+    Select,
+    FormControl,
+    InputLabel
 } from '@mui/material';
 import {
     SearchRounded,
@@ -45,6 +48,7 @@ const ShowStudents = () => {
     const [message, setMessage] = useState("");
     const [anchorEl, setAnchorEl] = useState(null);
     const [selectedStudent, setSelectedStudent] = useState(null);
+    const [sortBy, setSortBy] = useState('name'); // name, roll, batch
 
     useEffect(() => {
         dispatch(getAllStudents(currentUser._id));
@@ -69,7 +73,22 @@ const ShowStudents = () => {
         student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.rollNum?.toString().includes(searchTerm) ||
         student.sclassName?.sclassName?.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+    ).sort((a, b) => {
+        if (sortBy === 'roll') {
+            const rollA = parseInt(a.rollNum || a.roll_num) || 0;
+            const rollB = parseInt(b.rollNum || b.roll_num) || 0;
+            return rollA - rollB;
+        } else if (sortBy === 'batch') {
+            const batchA = a.sclassName?.sclassName || '';
+            const batchB = b.sclassName?.sclassName || '';
+            return batchA.localeCompare(batchB);
+        } else {
+            // default by name
+            const nameA = a.name || '';
+            const nameB = b.name || '';
+            return nameA.localeCompare(nameB);
+        }
+    }) || [];
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -107,6 +126,20 @@ const ShowStudents = () => {
                             sx={{ ml: 1, fontWeight: 600, fontSize: '0.9rem' }}
                         />
                     </SearchWrapper>
+
+                    <FormControl size="small" sx={{ minWidth: 150, background: 'var(--clr-surface-1)', borderRadius: '12px', "& .MuiOutlinedInput-root": { borderRadius: '12px', fontWeight: 600 } }}>
+                        <InputLabel sx={{ fontWeight: 600 }}>Sort By</InputLabel>
+                        <Select
+                            value={sortBy}
+                            label="Sort By"
+                            onChange={(e) => setSortBy(e.target.value)}
+                        >
+                            <MenuItem value="name">Name</MenuItem>
+                            <MenuItem value="roll">Roll Number</MenuItem>
+                            <MenuItem value="batch">Batch Number</MenuItem>
+                        </Select>
+                    </FormControl>
+
                     <AddButton onClick={() => navigate("/Admin/addstudents")}>
                         <PersonAddAlt1Rounded />
                         <Typography sx={{ ml: 1, fontWeight: 800, display: { xs: 'none', sm: 'block' } }}>Enroll Student</Typography>

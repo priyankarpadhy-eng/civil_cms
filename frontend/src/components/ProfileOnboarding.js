@@ -72,13 +72,13 @@ const ProfileOnboarding = ({ user, type }) => {
             return;
         }
         setLoader(true);
-        dispatch(updateUser(studentData, user.id));
+        dispatch(updateUser(studentData, user._id || user.id));
     };
 
     const handleFacultySubmit = (e) => {
         e.preventDefault();
         setLoader(true);
-        dispatch(updateUser(facultyData, user.id));
+        dispatch(updateUser(facultyData, user._id || user.id));
     };
 
     return (
